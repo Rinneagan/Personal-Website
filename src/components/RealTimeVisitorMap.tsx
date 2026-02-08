@@ -74,8 +74,8 @@ export function useRealTimeVisitors() {
   const trackVisitor = (visitorData: Partial<RealVisitor>) => {
     const sessionId = sessionIdRef.current || `session-${Date.now()}`;
     const visitor: RealVisitor = {
-      id: `visitor-${Date.now()}-${Math.random()}`,
-      location: visitorData.location || {
+      id: `visitor-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      location: {
         city: 'Unknown',
         country: 'Unknown',
         coordinates: { lat: 40.7128, lng: -74.0060 },
@@ -111,27 +111,74 @@ export function useRealTimeVisitors() {
     });
   };
 
-  // Get visitor location from IP (simulated for demo)
+  // Get visitor location from IP (real-time data)
   const getVisitorLocation = async (): Promise<RealVisitor['location']> => {
-    // In production, this would call a geolocation API
-    // For demo, we'll simulate based on some patterns
-    const locations = [
-      { city: 'New York', country: 'United States', lat: 40.7128, lng: -74.0060, region: 'North America' },
-      { city: 'London', country: 'United Kingdom', lat: 51.5074, lng: -0.1278, region: 'Europe' },
-      { city: 'Tokyo', country: 'Japan', lat: 35.6762, lng: 139.6503, region: 'Asia' },
-      { city: 'San Francisco', country: 'United States', lat: 37.7749, lng: -122.4194, region: 'North America' },
-      { city: 'Toronto', country: 'Canada', lat: 43.6532, lng: -79.3832, region: 'North America' },
-      { city: 'Berlin', country: 'Germany', lat: 52.5200, lng: 13.4050, region: 'Europe' },
-      { city: 'Sydney', country: 'Australia', lat: -33.8688, lng: 151.2093, region: 'Oceania' },
-      { city: 'Mumbai', country: 'India', lat: 19.0760, lng: 72.8777, region: 'Asia' },
-      { city: 'São Paulo', country: 'Brazil', lat: -23.5505, lng: -46.6333, region: 'South America' }
-    ];
+    try {
+      // First try browser geolocation (more accurate)
+      if (navigator.geolocation) {
+        return new Promise((resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(
+            async (position) => {
+              try {
+                // Reverse geocoding to get city/country from coordinates
+                const response = await fetch(
+                  `https://nominatim.openstreetmap.org/reverse?format=json&lat=${position.coords.latitude}&lon=${position.coords.longitude}&accept-language=en`
+                );
+                const data = await response.json();
+                
+                resolve({
+                  city: data.address?.city || data.address?.town || 'Unknown',
+                  country: data.address?.country || 'Unknown',
+                  coordinates: {
+                    lat: position.coords.latitude,
+                    lng: position.coords.longitude
+                  },
+                  region: data.address?.continent || 'Unknown'
+                });
+              } catch (error) {
+                // Fallback to IP-based geolocation
+                await getIPLocation();
+              }
+            },
+            async () => {
+              // Geolocation denied, fallback to IP-based
+              await getIPLocation();
+            }
+          );
+        });
+      }
+    } catch (error) {
+      console.warn('Geolocation failed, using IP-based location');
+    }
 
-    return new Promise(resolve => {
-      setTimeout(() => {
-        resolve(locations[Math.floor(Math.random() * locations.length)]);
-      }, Math.random() * 1000 + 500);
-    });
+    // Fallback: IP-based geolocation
+    async function getIPLocation(): Promise<RealVisitor['location']> {
+      try {
+        const response = await fetch('https://ipapi.co/json/');
+        const data = await response.json();
+        
+        return {
+          city: data.city || 'Unknown',
+          country: data.country_name || 'Unknown',
+          coordinates: {
+            lat: data.latitude || 0,
+            lng: data.longitude || 0
+          },
+          region: data.region || 'Unknown'
+        };
+      } catch (error) {
+        console.warn('IP geolocation failed, using default location');
+        // Ultimate fallback
+        return {
+          city: 'Unknown',
+          country: 'Unknown',
+          coordinates: { lat: 0, lng: 0 },
+          region: 'Unknown'
+        };
+      }
+    }
+
+    return getIPLocation();
   };
 
   // Initialize session on mount
@@ -234,7 +281,8 @@ export function useRealTimeVisitors() {
     topCountries: getUniqueCountries(),
     recentVisitors: getRecentVisitors(),
     trackPageView,
-    trackVisitor
+    trackVisitor,
+    getVisitorLocation
   };
 }
 
@@ -247,7 +295,10 @@ export function VisitorMap({ className = '' }: VisitorMapProps) {
     avgSessionDuration,
     topPages,
     topCountries,
-    recentVisitors
+    recentVisitors,
+    trackPageView,
+    trackVisitor,
+    getVisitorLocation
   } = useRealTimeVisitors();
 
   const [selectedTimeRange, setSelectedTimeRange] = useState<'1h' | '24h' | '7d' | '30d'>('24h');
@@ -347,14 +398,11 @@ export function VisitorMap({ className = '' }: VisitorMapProps) {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => {
-                  // Simulate new visitor arrival
+                onClick={async () => {
+                  // Track new visitor with real location data
+                  const location = await getVisitorLocation();
                   const newVisitor = {
-                    location: {
-                      city: 'New Visitor',
-                      country: 'Unknown',
-                      coordinates: { lat: 40.7128, lng: -74.0060 }
-                    },
+                    location,
                     timestamp: new Date().toISOString(),
                     page: window.location.pathname,
                     duration: 0,
@@ -362,12 +410,50 @@ export function VisitorMap({ className = '' }: VisitorMapProps) {
                     isNew: true
                   };
                   
-                  // This would trigger the real-time tracking
-                  console.log('New visitor tracked:', newVisitor);
+                  trackVisitor(newVisitor);
+                  trackPageView(window.location.pathname);
                 }}
               >
                 <RefreshCw className="w-4 h-4 mr-1" />
-                Simulate Visit
+                Track Your Visit
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={async () => {
+                  // Add visitors from random real-world locations for demo
+                  const demoLocations = [
+                    { city: 'Tokyo', country: 'Japan', lat: 35.6762, lng: 139.6503 },
+                    { city: 'London', country: 'United Kingdom', lat: 51.5074, lng: -0.1278 },
+                    { city: 'Paris', country: 'France', lat: 48.8566, lng: 2.3522 },
+                    { city: 'Sydney', country: 'Australia', lat: -33.8688, lng: 151.2093 },
+                    { city: 'Dubai', country: 'UAE', lat: 25.2048, lng: 55.2708 },
+                    { city: 'Singapore', country: 'Singapore', lat: 1.3521, lng: 103.8198 },
+                    { city: 'Mumbai', country: 'India', lat: 19.0760, lng: 72.8777 },
+                    { city: 'São Paulo', country: 'Brazil', lat: -23.5505, lng: -46.6333 }
+                  ];
+                  
+                  const randomLocation = demoLocations[Math.floor(Math.random() * demoLocations.length)];
+                  const newVisitor = {
+                    location: {
+                      city: randomLocation.city,
+                      country: randomLocation.country,
+                      coordinates: { lat: randomLocation.lat, lng: randomLocation.lng },
+                      region: 'Demo'
+                    },
+                    timestamp: new Date().toISOString(),
+                    page: window.location.pathname,
+                    duration: Math.random() * 300, // Random session duration
+                    sessionId: `demo-session-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+                    isNew: true
+                  };
+                  
+                  trackVisitor(newVisitor);
+                  trackPageView(window.location.pathname);
+                }}
+              >
+                <Users className="w-4 h-4 mr-1" />
+                Add Random Visitor
               </Button>
             </div>
 
@@ -587,19 +673,17 @@ export function VisitorMap({ className = '' }: VisitorMapProps) {
                   <span className="text-sm font-medium">Duration</span>
                   <p>{selectedVisitor.duration}s</p>
                 </div>
-              </div>
-              
               <div>
                 <span className="text-sm font-medium">Timestamp</span>
-                  <p>{new Date(selectedVisitor.timestamp).toLocaleString()}</p>
-                </div>
+                <p>{new Date(selectedVisitor.timestamp).toLocaleString()}</p>
+              </div>
               </div>
               
               {selectedVisitor.referrer && (
                 <div>
-                  <span className="text-sm font-medium">Referrer</span>
-                  <p>{selectedVisitor.referrer}</p>
-                </div>
+                <span className="text-sm font-medium">Referrer</span>
+                <p>{selectedVisitor.referrer}</p>
+              </div>
               )}
             </div>
           </div>
@@ -608,3 +692,5 @@ export function VisitorMap({ className = '' }: VisitorMapProps) {
     </div>
   );
 }
+
+export { VisitorMap as default };

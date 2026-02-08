@@ -7,7 +7,6 @@ import { Button } from '@/components/ui/button';
 import { GitHubUser } from '@/lib/github';
 import { GitHubHeatmap } from '@/components/GitHubHeatmap';
 import { CollaborationHub } from '@/components/CollaborationHub';
-import { DeploymentHelper } from '@/components/DeploymentHelper';
 import { 
   User, 
   Code, 
@@ -331,15 +330,6 @@ export function AboutSection({ user }: AboutSectionProps) {
         className="mb-8"
       >
         <GitHubHeatmap username="Rinneagan" />
-      </motion.div>
-
-      {/* Deployment Helper */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.4 }}
-      >
-        <DeploymentHelper />
       </motion.div>
 
       {/* Collaboration Hub */}

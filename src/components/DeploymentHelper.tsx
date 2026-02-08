@@ -1,9 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { 
   Rocket, 
   Globe, 
@@ -12,7 +15,10 @@ import {
   CheckCircle, 
   AlertCircle, 
   Copy,
-  Terminal
+  Terminal,
+  Key,
+  Settings,
+  Loader2
 } from 'lucide-react';
 
 interface Platform {
@@ -28,6 +34,9 @@ interface Platform {
     domains?: string[];
     envVars?: string[];
     buildOutput?: string;
+    apiToken?: string;
+    siteId?: string;
+    teamId?: string;
   };
 }
 
@@ -36,7 +45,7 @@ interface DeploymentHelperProps {
 }
 
 export function DeploymentHelper({ className = '' }: DeploymentHelperProps) {
-  const [platforms] = useState<Platform[]>([
+  const [platforms, setPlatforms] = useState<Platform[]>([
     {
       id: 'vercel',
       name: 'Vercel',
@@ -44,10 +53,12 @@ export function DeploymentHelper({ className = '' }: DeploymentHelperProps) {
       icon: <Rocket className="w-5 h-5" />,
       deployCommand: 'vercel --prod',
       buildCommand: 'npm run build',
-      status: 'ready',
+      status: 'needs-config',
       url: 'https://vercel.com',
       config: {
-        envVars: ['NEXT_PUBLIC_GITHUB_TOKEN']
+        envVars: ['NEXT_PUBLIC_GITHUB_TOKEN', 'VERCEL_TOKEN'],
+        apiToken: '',
+        teamId: ''
       }
     },
     {
@@ -57,11 +68,13 @@ export function DeploymentHelper({ className = '' }: DeploymentHelperProps) {
       icon: <Globe className="w-5 h-5" />,
       deployCommand: 'netlify deploy --prod --dir=.next',
       buildCommand: 'npm run build && npm run export',
-      status: 'ready',
+      status: 'needs-config',
       url: 'https://netlify.com',
       config: {
         domains: ['your-domain.netlify.app'],
-        envVars: ['NEXT_PUBLIC_GITHUB_TOKEN']
+        envVars: ['NEXT_PUBLIC_GITHUB_TOKEN', 'NETLIFY_TOKEN'],
+        apiToken: '',
+        siteId: ''
       }
     },
     {
@@ -71,43 +84,217 @@ export function DeploymentHelper({ className = '' }: DeploymentHelperProps) {
       icon: <Github className="w-5 h-5" />,
       deployCommand: 'npm run build && npm run deploy',
       buildCommand: 'npm run build && npm run export',
-      status: 'ready',
+      status: 'needs-config',
       url: 'https://pages.github.com',
       config: {
         domains: ['your-username.github.io'],
-        buildOutput: 'out'
-      }
-    },
-    {
-      id: 'railway',
-      name: 'Railway',
-      description: 'Simple deployment with database support',
-      icon: <Terminal className="w-5 h-5" />,
-      deployCommand: 'railway up',
-      buildCommand: 'npm run build',
-      status: 'ready',
-      url: 'https://railway.app',
-      config: {
-        envVars: ['NEXT_PUBLIC_GITHUB_TOKEN', 'NODE_ENV']
-      }
-    },
-    {
-      id: 'render',
-      name: 'Render',
-      description: 'Modern hosting for web services',
-      icon: <ExternalLink className="w-5 h-5" />,
-      deployCommand: 'render deploy',
-      buildCommand: 'npm run build',
-      status: 'ready',
-      url: 'https://render.com',
-      config: {
-        envVars: ['NEXT_PUBLIC_GITHUB_TOKEN']
+        envVars: ['NEXT_PUBLIC_GITHUB_TOKEN', 'GITHUB_TOKEN'],
+        buildOutput: 'out',
+        apiToken: ''
       }
     }
   ]);
 
   const [selectedPlatform, setSelectedPlatform] = useState<string | null>(null);
   const [deploymentStatus, setDeploymentStatus] = useState<Record<string, 'deploying' | 'success' | 'error' | undefined>>({});
+  const [deploymentLogs, setDeploymentLogs] = useState<Record<string, string[]>>({});
+  const [showConfig, setShowConfig] = useState<string | null>(null);
+  const [configForm, setConfigForm] = useState<Record<string, any>>({});
+
+  // Load saved configuration from localStorage and environment variables
+  useEffect(() => {
+    const savedConfig = localStorage.getItem('deployment-config');
+    let parsed: Record<string, any> = {};
+    
+    if (savedConfig) {
+      try {
+        parsed = JSON.parse(savedConfig);
+      } catch (error) {
+        console.error('Failed to load saved config:', error);
+      }
+    }
+    
+    // Auto-load from environment variables if available
+    if (typeof window !== 'undefined') {
+      // These would be available in production build
+      const vercelToken = process.env.NEXT_PUBLIC_VERCEL_TOKEN || '';
+      const githubToken = process.env.NEXT_PUBLIC_GITHUB_TOKEN || '';
+      
+      if (vercelToken) {
+        parsed['vercel_apiToken'] = vercelToken;
+      }
+      if (githubToken) {
+        parsed['github-pages_apiToken'] = githubToken;
+      }
+    }
+    
+    setConfigForm(parsed);
+    
+    // Update platforms with saved tokens and env vars
+    setPlatforms(prev => prev.map(platform => ({
+      ...platform,
+      config: {
+        ...platform.config,
+        apiToken: parsed[`${platform.id}_apiToken`] || '',
+        siteId: parsed[`${platform.id}_siteId`] || '',
+        teamId: parsed[`${platform.id}_teamId`] || ''
+      },
+      status: parsed[`${platform.id}_apiToken`] || 
+                (platform.id === 'vercel' && process.env.NEXT_PUBLIC_VERCEL_TOKEN) ||
+                (platform.id === 'github-pages' && process.env.NEXT_PUBLIC_GITHUB_TOKEN)
+                ? 'ready' : 'needs-config'
+    })));
+  }, []);
+
+  const saveConfig = (platformId: string, config: any) => {
+    const newConfig = { ...configForm, ...config };
+    setConfigForm(newConfig);
+    localStorage.setItem('deployment-config', JSON.stringify(newConfig));
+    
+    // Update platform with new config
+    setPlatforms(prev => prev.map(platform => 
+      platform.id === platformId 
+        ? { 
+            ...platform, 
+            config: { 
+              ...platform.config, 
+              apiToken: config[`${platformId}_apiToken`] || '',
+              siteId: config[`${platformId}_siteId`] || '',
+              teamId: config[`${platformId}_teamId`] || ''
+            },
+            status: config[`${platformId}_apiToken`] ? 'ready' : 'needs-config'
+          }
+        : platform
+    ));
+  };
+
+  const addLog = (platformId: string, message: string) => {
+    setDeploymentLogs(prev => ({
+      ...prev,
+      [platformId]: [...(prev[platformId] || []), `[${new Date().toLocaleTimeString()}] ${message}`]
+    }));
+  };
+
+  const deployToVercel = async (platform: Platform) => {
+    const token = platform.config?.apiToken;
+    if (!token) {
+      throw new Error('Vercel API token is required');
+    }
+
+    addLog(platform.id, 'Starting Vercel deployment...');
+    
+    try {
+      // Use our API route instead of direct browser call
+      const response = await fetch('/api/deploy/vercel', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          token,
+          projectName: 'personal-website'
+        })
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Deployment failed');
+      }
+
+      if (result.success) {
+        addLog(platform.id, `✅ Deployment successful: ${result.deploymentUrl}`);
+        return result.deploymentUrl;
+      } else {
+        throw new Error(result.error || 'Deployment failed');
+      }
+    } catch (error) {
+      addLog(platform.id, `❌ Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw error;
+    }
+  };
+
+  const deployToNetlify = async (platform: Platform) => {
+    const token = platform.config?.apiToken;
+    const siteId = platform.config?.siteId;
+    
+    if (!token) {
+      throw new Error('Netlify API token is required');
+    }
+
+    addLog(platform.id, 'Starting Netlify deployment...');
+    
+    try {
+      // Use our API route instead of direct browser call
+      const response = await fetch('/api/deploy/netlify', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          token,
+          siteId,
+          siteName: 'personal-website'
+        })
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Deployment failed');
+      }
+
+      if (result.success) {
+        addLog(platform.id, `✅ Deployment successful: ${result.deploymentUrl}`);
+        return result.deploymentUrl;
+      } else {
+        throw new Error(result.error || 'Deployment failed');
+      }
+    } catch (error) {
+      addLog(platform.id, `❌ Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw error;
+    }
+  };
+
+  const deployToGitHubPages = async (platform: Platform) => {
+    const token = platform.config?.apiToken;
+    if (!token) {
+      throw new Error('GitHub token is required');
+    }
+
+    addLog(platform.id, 'Starting GitHub Pages deployment...');
+    
+    try {
+      // Use our API route instead of direct browser call
+      const response = await fetch('/api/deploy/github', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          token,
+          owner: 'Rinneagan',
+          repo: 'personal-website'
+        })
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Deployment failed');
+      }
+
+      if (result.success) {
+        addLog(platform.id, `✅ GitHub Pages ready: ${result.deploymentUrl}`);
+        return result.deploymentUrl;
+      } else {
+        throw new Error(result.error || 'Deployment failed');
+      }
+    } catch (error) {
+      addLog(platform.id, `❌ Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw error;
+    }
+  };
 
   const handleDeploy = async (platformId: string) => {
     const platform = platforms.find(p => p.id === platformId);
@@ -115,15 +302,24 @@ export function DeploymentHelper({ className = '' }: DeploymentHelperProps) {
 
     setDeploymentStatus(prev => ({ ...prev, [platformId]: 'deploying' }));
     setSelectedPlatform(platformId);
+    setDeploymentLogs(prev => ({ ...prev, [platformId]: [] }));
 
     try {
-      // Simulate deployment process
-      console.log(`Starting deployment to ${platform.name}...`);
-      console.log(`Build command: ${platform.buildCommand}`);
-      console.log(`Deploy command: ${platform.deployCommand}`);
-
-      // In a real implementation, this would execute the actual commands
-      await new Promise(resolve => setTimeout(resolve, 3000));
+      let deployUrl: string;
+      
+      switch (platformId) {
+        case 'vercel':
+          deployUrl = await deployToVercel(platform);
+          break;
+        case 'netlify':
+          deployUrl = await deployToNetlify(platform);
+          break;
+        case 'github-pages':
+          deployUrl = await deployToGitHubPages(platform);
+          break;
+        default:
+          throw new Error('Unsupported platform');
+      }
 
       setDeploymentStatus(prev => ({ ...prev, [platformId]: 'success' }));
       
@@ -136,7 +332,9 @@ export function DeploymentHelper({ className = '' }: DeploymentHelperProps) {
       }, 5000);
 
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
       console.error(`Deployment to ${platform.name} failed:`, error);
+      addLog(platformId, `❌ Deployment failed: ${errorMessage}`);
       setDeploymentStatus(prev => ({ ...prev, [platformId]: 'error' }));
       
       setTimeout(() => {
@@ -309,33 +507,110 @@ export function DeploymentHelper({ className = '' }: DeploymentHelperProps) {
                         </div>
                       </div>
 
-                      <Button 
-                        className="w-full mt-4"
-                        onClick={() => handleDeploy(platform.id)}
-                        disabled={deploymentStatus[platform.id] === 'deploying'}
-                      >
-                        {deploymentStatus[platform.id] === 'deploying' ? (
-                          <>
-                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-                            Deploying...
-                          </>
-                        ) : deploymentStatus[platform.id] === 'success' ? (
-                          <>
-                            <CheckCircle className="w-4 h-4 mr-2" />
-                            Deployed!
-                          </>
-                        ) : deploymentStatus[platform.id] === 'error' ? (
-                          <>
-                            <AlertCircle className="w-4 h-4 mr-2" />
-                            Try Again
-                          </>
-                        ) : (
-                          <>
-                            <Rocket className="w-4 h-4 mr-2" />
-                            Deploy to {platform.name}
-                          </>
-                        )}
-                      </Button>
+                      <div className="flex gap-2 mt-4">
+                        <Button 
+                          className="flex-1"
+                          onClick={() => handleDeploy(platform.id)}
+                          disabled={deploymentStatus[platform.id] === 'deploying'}
+                        >
+                          {deploymentStatus[platform.id] === 'deploying' ? (
+                            <>
+                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                              Deploying...
+                            </>
+                          ) : deploymentStatus[platform.id] === 'success' ? (
+                            <>
+                              <CheckCircle className="w-4 h-4 mr-2" />
+                              Deployed!
+                            </>
+                          ) : deploymentStatus[platform.id] === 'error' ? (
+                            <>
+                              <AlertCircle className="w-4 h-4 mr-2" />
+                              Try Again
+                            </>
+                          ) : (
+                            <>
+                              <Rocket className="w-4 h-4 mr-2" />
+                              Deploy
+                            </>
+                          )}
+                        </Button>
+                        <Button 
+                          variant="outline"
+                          size="icon"
+                          onClick={() => setShowConfig(showConfig === platform.id ? null : platform.id)}
+                        >
+                          <Settings className="w-4 h-4" />
+                        </Button>
+                      </div>
+
+                      {/* Configuration Panel */}
+                      {showConfig === platform.id && (
+                        <div className="mt-4 p-4 bg-muted/50 rounded-lg space-y-3">
+                          <h5 className="font-medium flex items-center gap-2">
+                            <Key className="w-4 h-4" />
+                            Configuration
+                          </h5>
+                          <div className="space-y-3">
+                            <div>
+                              <Label htmlFor={`${platform.id}-token`} className="text-sm font-medium">
+                                API Token
+                              </Label>
+                              <Input
+                                id={`${platform.id}-token`}
+                                type="password"
+                                placeholder={`Enter ${platform.name} API token`}
+                                value={configForm[`${platform.id}_apiToken`] || ''}
+                                onChange={(e) => {
+                                  const newConfig = { ...configForm, [`${platform.id}_apiToken`]: e.target.value };
+                                  setConfigForm(newConfig);
+                                }}
+                                className="mt-1"
+                              />
+                            </div>
+                            {platform.id === 'netlify' && (
+                              <div>
+                                <Label htmlFor={`${platform.id}-siteId`} className="text-sm font-medium">
+                                  Site ID (optional)
+                                </Label>
+                                <Input
+                                  id={`${platform.id}-siteId`}
+                                  type="text"
+                                  placeholder="Enter Netlify site ID"
+                                  value={configForm[`${platform.id}_siteId`] || ''}
+                                  onChange={(e) => {
+                                    const newConfig = { ...configForm, [`${platform.id}_siteId`]: e.target.value };
+                                    setConfigForm(newConfig);
+                                  }}
+                                  className="mt-1"
+                                />
+                              </div>
+                            )}
+                            <Button 
+                              size="sm" 
+                              onClick={() => saveConfig(platform.id, configForm)}
+                              className="w-full"
+                            >
+                              Save Configuration
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Deployment Logs */}
+                      {deploymentLogs[platform.id] && deploymentLogs[platform.id].length > 0 && (
+                        <div className="mt-4 p-4 bg-muted/30 rounded-lg">
+                          <h5 className="font-medium mb-2 flex items-center gap-2">
+                            <Terminal className="w-4 h-4" />
+                            Deployment Logs
+                          </h5>
+                          <div className="bg-black/50 text-green-400 p-3 rounded text-xs font-mono max-h-32 overflow-y-auto">
+                            {deploymentLogs[platform.id].map((log, index) => (
+                              <div key={index} className="mb-1">{log}</div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </CardContent>
                   </Card>
                 ))}
@@ -345,15 +620,28 @@ export function DeploymentHelper({ className = '' }: DeploymentHelperProps) {
             {/* Deployment Tips */}
             <div className="bg-blue-50 dark:bg-blue-950/20 rounded-lg p-4">
               <h4 className="font-semibold mb-3 text-blue-800 dark:text-blue-200">
-                💡 Deployment Tips
+                💡 Deployment Setup
               </h4>
-              <ul className="space-y-2 text-sm text-blue-700 dark:text-blue-300">
-                <li>• Always test your build locally before deploying</li>
-                <li>• Set environment variables in your hosting platform dashboard</li>
-                <li>• Use custom domains for professional appearance</li>
-                <li>• Enable automatic deployments for seamless updates</li>
-                <li>• Monitor deployment logs for troubleshooting</li>
-              </ul>
+              <div className="space-y-4 text-sm text-blue-700 dark:text-blue-300">
+                <div>
+                  <h5 className="font-medium mb-2">Getting API Tokens:</h5>
+                  <ul className="space-y-1 ml-4">
+                    <li>• <strong>Vercel:</strong> Visit <a href="https://vercel.com/account/tokens" target="_blank" rel="noopener noreferrer" className="underline">Account Settings → Tokens</a></li>
+                    <li>• <strong>Netlify:</strong> Visit <a href="https://app.netlify.com/user/applications" target="_blank" rel="noopener noreferrer" className="underline">User Settings → Applications</a></li>
+                    <li>• <strong>GitHub:</strong> Visit <a href="https://github.com/settings/tokens" target="_blank" rel="noopener noreferrer" className="underline">Developer Settings → Personal Access Tokens</a></li>
+                  </ul>
+                </div>
+                <div>
+                  <h5 className="font-medium mb-2">Best Practices:</h5>
+                  <ul className="space-y-1 ml-4">
+                    <li>• Store API tokens securely and never commit them to git</li>
+                    <li>• Test your build locally before deploying</li>
+                    <li>• Use custom domains for professional appearance</li>
+                    <li>• Enable automatic deployments for seamless updates</li>
+                    <li>• Monitor deployment logs for troubleshooting</li>
+                  </ul>
+                </div>
+              </div>
             </div>
           </div>
         </CardContent>

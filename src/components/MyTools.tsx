@@ -4,8 +4,7 @@ import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { VisitorMap } from '@/components/VisitorMap';
-import { RealTimeVisitorMap } from '@/components/RealTimeVisitorMap';
+import { VisitorMap, useRealTimeVisitors } from '@/components/RealTimeVisitorMap';
 import { DeploymentHelper } from '@/components/DeploymentHelper';
 import { 
   Settings, 
@@ -17,7 +16,10 @@ import {
   Eye,
   Zap,
   Clock,
-  Target
+  RefreshCw,
+  Maximize2,
+  Navigation,
+  MousePointer
 } from 'lucide-react';
 
 interface MyToolsProps {
@@ -26,6 +28,15 @@ interface MyToolsProps {
 
 export function MyTools({ className = '' }: MyToolsProps) {
   const [activeTab, setActiveTab] = useState<'visitor-map' | 'deployment'>('visitor-map');
+  const {
+    totalVisitors,
+    activeVisitors,
+    avgSessionDuration,
+    pageViews
+  } = useRealTimeVisitors();
+
+  // Calculate bounce rate (mock calculation for now - would need more tracking)
+  const bounceRate = totalVisitors > 0 ? Math.max(5, Math.min(40, (pageViews / totalVisitors) * 10)) : 0;
 
   return (
     <div className={`space-y-6 ${className}`}>
@@ -63,7 +74,7 @@ export function MyTools({ className = '' }: MyToolsProps) {
 
             {/* Tab Content */}
             {activeTab === 'visitor-map' ? (
-              <RealTimeVisitorMap />
+              <VisitorMap />
             ) : (
               <DeploymentHelper />
             )}
@@ -149,19 +160,24 @@ export function MyTools({ className = '' }: MyToolsProps) {
             <h4 className="font-semibold mb-4 text-center">Quick Stats</h4>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
               <div>
-                <div className="text-2xl font-bold text-blue-600">1,234</div>
+                <div className="text-2xl font-bold text-blue-600">{totalVisitors.toLocaleString()}</div>
                 <div className="text-sm text-muted-foreground">Total Visitors</div>
               </div>
               <div>
-                <div className="text-2xl font-bold text-green-600">89</div>
+                <div className="text-2xl font-bold text-green-600">{activeVisitors.size}</div>
                 <div className="text-sm text-muted-foreground">Active Now</div>
               </div>
               <div>
-                <div className="text-2xl font-bold text-purple-600">4:32</div>
+                <div className="text-2xl font-bold text-purple-600">
+                  {avgSessionDuration > 60 
+                    ? `${Math.round(avgSessionDuration / 60)}m ${Math.round(avgSessionDuration % 60)}s`
+                    : `${Math.round(avgSessionDuration)}s`
+                  }
+                </div>
                 <div className="text-sm text-muted-foreground">Avg. Session</div>
               </div>
               <div>
-                <div className="text-2xl font-bold text-orange-600">23.5%</div>
+                <div className="text-2xl font-bold text-orange-600">{bounceRate.toFixed(1)}%</div>
                 <div className="text-sm text-muted-foreground">Bounce Rate</div>
               </div>
             </div>

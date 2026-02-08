@@ -25,16 +25,11 @@ export interface GitHubUser {
   public_repos: number;
   followers: number;
   following: number;
+  company: string | null;
 }
 
 const GITHUB_API_BASE = 'https://api.github.com';
-const GITHUB_TOKEN = process.env.GITHUB_TOKEN || "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";
-
-// Debug: Check if token is available
-console.log('GitHub Token available:', !!process.env.GITHUB_TOKEN);
-console.log('Token length:', GITHUB_TOKEN?.length || 0);
-console.log('Environment token:', process.env.GITHUB_TOKEN);
-console.log('Using token:', GITHUB_TOKEN ? GITHUB_TOKEN.substring(0, 10) + '...' : 'fallback');
+const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
 
 // Test simple API call
 export async function testGitHubAPI(): Promise<boolean> {
