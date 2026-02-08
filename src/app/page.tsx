@@ -1,0 +1,141 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { ProfileHeader } from '@/components/ProfileHeader';
+import { ProjectCard } from '@/components/ProjectCard';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { ThemeToggle } from '@/components/ThemeToggle';
+import { GitHubUser, GitHubRepo } from '@/lib/github';
+import { getUserInfo, getUserRepos } from '@/lib/github';
+import { Search, Code } from 'lucide-react';
+
+export default function Home() {
+  const [user, setUser] = useState<GitHubUser | null>(null);
+  const [repos, setRepos] = useState<GitHubRepo[]>([]);
+  const [filteredRepos, setFilteredRepos] = useState<GitHubRepo[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedLanguage, setSelectedLanguage] = useState<string | null>(null);
+
+  const username = 'Rinneagan'; // Replace with your GitHub username
+
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const [userData, reposData] = await Promise.all([
+          getUserInfo(username),
+          getUserRepos(username)
+        ]);
+        
+        setUser(userData);
+        setRepos(reposData);
+        setFilteredRepos(reposData);
+      } catch (error) {
+        console.error('Error fetching data:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchData();
+  }, [username]);
+
+  useEffect(() => {
+    let filtered = repos;
+
+    if (searchTerm) {
+      filtered = filtered.filter(repo =>
+        repo.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        repo.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        repo.topics.some(topic => topic.toLowerCase().includes(searchTerm.toLowerCase()))
+      );
+    }
+
+    if (selectedLanguage) {
+      filtered = filtered.filter(repo => repo.language === selectedLanguage);
+    }
+
+    setFilteredRepos(filtered);
+  }, [searchTerm, selectedLanguage, repos]);
+
+  const languages = Array.from(
+    new Set(repos.map(repo => repo.language).filter(Boolean))
+  ) as string[];
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <Code className="w-8 h-8 mx-auto mb-4 animate-pulse" />
+          <p className="text-muted-foreground">Loading portfolio...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-background">
+      <div className="container mx-auto px-4 py-8 max-w-6xl">
+        <div className="flex justify-end mb-4">
+          <ThemeToggle />
+        </div>
+        
+        {user && <ProfileHeader user={user} />}
+
+        <div className="mt-8 space-y-6">
+          <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
+            <div className="relative flex-1 max-w-md">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder="Search repositories..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            
+            <div className="flex flex-wrap gap-2">
+              <Badge
+                variant={selectedLanguage === null ? "default" : "outline"}
+                className="cursor-pointer"
+                onClick={() => setSelectedLanguage(null)}
+              >
+                All
+              </Badge>
+              {languages.map((language) => (
+                <Badge
+                  key={language}
+                  variant={selectedLanguage === language ? "default" : "outline"}
+                  className="cursor-pointer"
+                  onClick={() => setSelectedLanguage(
+                    selectedLanguage === language ? null : language
+                  )}
+                >
+                  {language}
+                </Badge>
+              ))}
+            </div>
+          </div>
+
+          <div className="text-sm text-muted-foreground">
+            {filteredRepos.length} {filteredRepos.length === 1 ? 'repository' : 'repositories'} found
+          </div>
+
+          {filteredRepos.length === 0 ? (
+            <div className="text-center py-12">
+              <Code className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+              <p className="text-muted-foreground">No repositories found matching your criteria.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredRepos.map((repo) => (
+                <ProjectCard key={repo.id} repo={repo} />
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
