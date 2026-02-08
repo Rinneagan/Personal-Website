@@ -7,6 +7,7 @@ import { ProjectModal } from '@/components/ProjectModal';
 import { ProjectTimeline } from '@/components/ProjectTimeline';
 import { SkillsSection } from '@/components/SkillsSection';
 import { ContactForm } from '@/components/ContactForm';
+import { PageTransition, TabTransition, SectionTransition } from '@/components/PageTransition';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { ThemeToggle } from '@/components/ThemeToggle';
@@ -93,117 +94,131 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-8 max-w-6xl">
-        <div className="flex justify-end mb-4">
-          <ThemeToggle />
-        </div>
-        
-        {user && <ProfileHeader user={user} />}
+    <PageTransition>
+      <div className="min-h-screen bg-background">
+        <div className="container mx-auto px-4 py-8 max-w-6xl">
+          <div className="flex justify-end mb-4">
+            <ThemeToggle />
+          </div>
+          
+          <SectionTransition animation="slideUp">
+            {user && <ProfileHeader user={user} />}
+          </SectionTransition>
 
-        <div className="mt-8">
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-4">
-              <TabsTrigger value="projects" className="flex items-center gap-2">
-                <Code className="w-4 h-4" />
-                Projects
-              </TabsTrigger>
-              <TabsTrigger value="timeline" className="flex items-center gap-2">
-                <Clock className="w-4 h-4" />
-                Timeline
-              </TabsTrigger>
-              <TabsTrigger value="skills" className="flex items-center gap-2">
-                <Award className="w-4 h-4" />
-                Skills
-              </TabsTrigger>
-              <TabsTrigger value="contact" className="flex items-center gap-2">
-                <Mail className="w-4 h-4" />
-                Contact
-              </TabsTrigger>
-            </TabsList>
+          <div className="mt-8">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+              <TabsList className="grid w-full grid-cols-4">
+                <TabsTrigger value="projects" className="flex items-center gap-2">
+                  <Code className="w-4 h-4" />
+                  Projects
+                </TabsTrigger>
+                <TabsTrigger value="timeline" className="flex items-center gap-2">
+                  <Clock className="w-4 h-4" />
+                  Timeline
+                </TabsTrigger>
+                <TabsTrigger value="skills" className="flex items-center gap-2">
+                  <Award className="w-4 h-4" />
+                  Skills
+                </TabsTrigger>
+                <TabsTrigger value="contact" className="flex items-center gap-2">
+                  <Mail className="w-4 h-4" />
+                  Contact
+                </TabsTrigger>
+              </TabsList>
 
-            <TabsContent value="projects" className="space-y-6 mt-6">
-              <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
-                <div className="relative flex-1 max-w-md">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Search repositories..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
+              <TabTransition isActive={activeTab === 'projects'}>
+                <TabsContent value="projects" className="space-y-6 mt-6">
+                  <SectionTransition animation="fadeIn">
+                    <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
+                      <div className="relative flex-1 max-w-md">
+                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                        <Input
+                          placeholder="Search repositories..."
+                          value={searchTerm}
+                          onChange={(e) => setSearchTerm(e.target.value)}
+                          className="pl-10"
+                        />
+                      </div>
+                      
+                      <div className="flex flex-wrap gap-2">
+                        <Badge
+                          variant={selectedLanguage === null ? "default" : "outline"}
+                          className="cursor-pointer"
+                          onClick={() => setSelectedLanguage(null)}
+                        >
+                          All
+                        </Badge>
+                        {languages.map((language) => (
+                          <Badge
+                            key={language}
+                            variant={selectedLanguage === language ? "default" : "outline"}
+                            className="cursor-pointer"
+                            onClick={() => setSelectedLanguage(
+                              selectedLanguage === language ? null : language
+                            )}
+                          >
+                            {language}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="text-sm text-muted-foreground">
+                      {filteredRepos.length} {filteredRepos.length === 1 ? 'repository' : 'repositories'} found
+                    </div>
+
+                    {filteredRepos.length === 0 ? (
+                      <div className="text-center py-12">
+                        <Code className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+                        <p className="text-muted-foreground">No repositories found matching your criteria.</p>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {filteredRepos.map((repo) => (
+                          <ProjectCard 
+                            key={repo.id} 
+                            repo={repo} 
+                            onViewDetails={handleViewDetails}
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </SectionTransition>
+                </TabsContent>
+              </TabTransition>
+
+              <TabTransition isActive={activeTab === 'timeline'}>
+                <TabsContent value="timeline" className="mt-6">
+                  <ProjectTimeline 
+                    repos={repos} 
+                    onViewDetails={handleViewDetails}
                   />
-                </div>
-                
-                <div className="flex flex-wrap gap-2">
-                  <Badge
-                    variant={selectedLanguage === null ? "default" : "outline"}
-                    className="cursor-pointer"
-                    onClick={() => setSelectedLanguage(null)}
-                  >
-                    All
-                  </Badge>
-                  {languages.map((language) => (
-                    <Badge
-                      key={language}
-                      variant={selectedLanguage === language ? "default" : "outline"}
-                      className="cursor-pointer"
-                      onClick={() => setSelectedLanguage(
-                        selectedLanguage === language ? null : language
-                      )}
-                    >
-                      {language}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
+                </TabsContent>
+              </TabTransition>
 
-              <div className="text-sm text-muted-foreground">
-                {filteredRepos.length} {filteredRepos.length === 1 ? 'repository' : 'repositories'} found
-              </div>
+              <TabTransition isActive={activeTab === 'skills'}>
+                <TabsContent value="skills" className="mt-6">
+                  <SkillsSection repos={repos} />
+                </TabsContent>
+              </TabTransition>
 
-              {filteredRepos.length === 0 ? (
-                <div className="text-center py-12">
-                  <Code className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-                  <p className="text-muted-foreground">No repositories found matching your criteria.</p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {filteredRepos.map((repo) => (
-                    <ProjectCard 
-                      key={repo.id} 
-                      repo={repo} 
-                      onViewDetails={handleViewDetails}
-                    />
-                  ))}
-                </div>
-              )}
-            </TabsContent>
-
-            <TabsContent value="timeline" className="mt-6">
-              <ProjectTimeline 
-                repos={repos} 
-                onViewDetails={handleViewDetails}
-              />
-            </TabsContent>
-
-            <TabsContent value="skills" className="mt-6">
-              <SkillsSection repos={repos} />
-            </TabsContent>
-
-            <TabsContent value="contact" className="mt-6">
-              <ContactForm user={user} />
-            </TabsContent>
-          </Tabs>
+              <TabTransition isActive={activeTab === 'contact'}>
+                <TabsContent value="contact" className="mt-6">
+                  <ContactForm user={user} />
+                </TabsContent>
+              </TabTransition>
+            </Tabs>
+          </div>
+          
+          {selectedRepo && (
+            <ProjectModal
+              repo={selectedRepo}
+              isOpen={isModalOpen}
+              onClose={handleCloseModal}
+            />
+          )}
         </div>
-        
-        {selectedRepo && (
-          <ProjectModal
-            repo={selectedRepo}
-            isOpen={isModalOpen}
-            onClose={handleCloseModal}
-          />
-        )}
       </div>
-    </div>
+    </PageTransition>
   );
 }
