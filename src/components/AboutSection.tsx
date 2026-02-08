@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { GitHubUser } from '@/lib/github';
 import { GitHubHeatmap } from '@/components/GitHubHeatmap';
+import { CollaborationHub } from '@/components/CollaborationHub';
 import { 
   User, 
   Code, 
@@ -325,11 +326,21 @@ export function AboutSection({ user }: AboutSectionProps) {
         <GitHubHeatmap username="Rinneagan" />
       </motion.div>
 
-      {/* Call to Action */}
+      {/* Collaboration Hub */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 1.2 }}
+        className="mb-8"
+      >
+        <CollaborationHub />
+      </motion.div>
+
+      {/* Call to Action */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 1.3 }}
         className="text-center"
       >
         <Card>
