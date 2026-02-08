@@ -4,15 +4,16 @@ import { GitHubRepo } from '@/lib/github';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Star, GitFork, ExternalLink, Code } from 'lucide-react';
+import { Star, GitFork, ExternalLink, Code, Eye } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface ProjectCardProps {
   repo: GitHubRepo;
   className?: string;
+  onViewDetails?: (repo: GitHubRepo) => void;
 }
 
-export function ProjectCard({ repo, className }: ProjectCardProps) {
+export function ProjectCard({ repo, className, onViewDetails }: ProjectCardProps) {
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
@@ -83,6 +84,15 @@ export function ProjectCard({ repo, className }: ProjectCardProps) {
         </div>
 
         <div className="flex gap-2 mt-auto">
+          <Button 
+            size="sm" 
+            variant="outline"
+            onClick={() => onViewDetails?.(repo)}
+            className="flex items-center gap-2"
+          >
+            <Eye className="w-4 h-4" />
+            Details
+          </Button>
           <Button asChild size="sm" className="flex-1">
             <a
               href={repo.html_url}

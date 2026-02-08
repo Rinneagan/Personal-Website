@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { ProfileHeader } from '@/components/ProfileHeader';
 import { ProjectCard } from '@/components/ProjectCard';
+import { ProjectModal } from '@/components/ProjectModal';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { ThemeToggle } from '@/components/ThemeToggle';
@@ -17,6 +18,8 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedLanguage, setSelectedLanguage] = useState<string | null>(null);
+  const [selectedRepo, setSelectedRepo] = useState<GitHubRepo | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const username = 'Rinneagan'; // Replace with your GitHub username
 
@@ -62,6 +65,16 @@ export default function Home() {
   const languages = Array.from(
     new Set(repos.map(repo => repo.language).filter(Boolean))
   ) as string[];
+
+  const handleViewDetails = (repo: GitHubRepo) => {
+    setSelectedRepo(repo);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedRepo(null);
+  };
 
   if (loading) {
     return (
@@ -130,11 +143,23 @@ export default function Home() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredRepos.map((repo) => (
-                <ProjectCard key={repo.id} repo={repo} />
+                <ProjectCard 
+                  key={repo.id} 
+                  repo={repo} 
+                  onViewDetails={handleViewDetails}
+                />
               ))}
             </div>
           )}
         </div>
+        
+        {selectedRepo && (
+          <ProjectModal
+            repo={selectedRepo}
+            isOpen={isModalOpen}
+            onClose={handleCloseModal}
+          />
+        )}
       </div>
     </div>
   );
