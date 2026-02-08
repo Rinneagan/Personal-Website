@@ -7,6 +7,7 @@ import { ProjectModal } from '@/components/ProjectModal';
 import { ProjectTimeline } from '@/components/ProjectTimeline';
 import { SkillsSection } from '@/components/SkillsSection';
 import { ContactForm } from '@/components/ContactForm';
+import { AboutSection } from '@/components/AboutSection';
 import { PageTransition, TabTransition, SectionTransition } from '@/components/PageTransition';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -14,7 +15,7 @@ import { ThemeToggle } from '@/components/ThemeToggle';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { GitHubUser, GitHubRepo } from '@/lib/github';
 import { getUserInfo, getUserRepos } from '@/lib/github';
-import { Search, Code, Clock, Award, Mail } from 'lucide-react';
+import { Search, Code, Clock, Award, Mail, User } from 'lucide-react';
 
 export default function Home() {
   const [user, setUser] = useState<GitHubUser | null>(null);
@@ -107,7 +108,11 @@ export default function Home() {
 
           <div className="mt-8">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-4">
+              <TabsList className="grid w-full grid-cols-5">
+                <TabsTrigger value="about" className="flex items-center gap-2">
+                  <User className="w-4 h-4" />
+                  About
+                </TabsTrigger>
                 <TabsTrigger value="projects" className="flex items-center gap-2">
                   <Code className="w-4 h-4" />
                   Projects
@@ -125,6 +130,12 @@ export default function Home() {
                   Contact
                 </TabsTrigger>
               </TabsList>
+
+              <TabTransition isActive={activeTab === 'about'}>
+                <TabsContent value="about" className="mt-6">
+                  <AboutSection user={user} />
+                </TabsContent>
+              </TabTransition>
 
               <TabTransition isActive={activeTab === 'projects'}>
                 <TabsContent value="projects" className="space-y-6 mt-6">
