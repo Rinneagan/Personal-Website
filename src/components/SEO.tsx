@@ -190,6 +190,3 @@ export function ProjectSEO({
     />
   );
 }
-
-// Default export for easy usage
-export default SEO;
