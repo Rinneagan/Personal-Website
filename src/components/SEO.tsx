@@ -1,6 +1,6 @@
 'use client';
 
-import { NextSeo, ArticleJsonLd, BreadcrumbJsonLd } from 'next-seo';
+import Head from 'next/head';
 
 interface SEOProps {
   title?: string;
@@ -17,28 +17,15 @@ interface SEOProps {
 }
 
 const DEFAULT_SEO = {
-  title: 'Rinneagan - Full Stack Developer Portfolio',
-  description: 'Passionate full-stack developer showcasing projects, skills, and journey in web development. Explore my GitHub repositories and technical expertise.',
-  url: 'https://your-portfolio-url.com',
+  title: 'Rinneagan - Full Stack Developer',
+  description: 'Passionate full stack developer creating innovative web solutions with modern technologies',
   image: '/og-image.jpg',
-  type: 'website' as const,
-  keywords: [
-    'full stack developer',
-    'web development',
-    'react',
-    'next.js',
-    'typescript',
-    'node.js',
-    'portfolio',
-    'github',
-    'javascript',
-    'programming',
-    'software engineering'
-  ],
-  author: 'Rinneagan'
+  url: 'https://rinneagan.dev',
+  keywords: ['full stack developer', 'web development', 'react', 'next.js', 'typescript'],
+  author: 'Rinneagan',
 };
 
-export function SEO({
+export default function SEO({
   title,
   description,
   image,
@@ -49,7 +36,7 @@ export function SEO({
   publishedDate,
   modifiedDate,
   section,
-  tags
+  tags,
 }: SEOProps) {
   const seoTitle = title || DEFAULT_SEO.title;
   const seoDescription = description || DEFAULT_SEO.description;
@@ -59,66 +46,45 @@ export function SEO({
   const seoAuthor = author || DEFAULT_SEO.author;
 
   return (
-    <>
-      <NextSeo
-        title={seoTitle}
-        description={seoDescription}
-        canonical={seoUrl}
-        openGraph={{
-          type,
-          url: seoUrl,
-          title: seoTitle,
-          description: seoDescription,
-          images: [
-            {
-              url: seoImage,
-              width: 1200,
-              height: 630,
-              alt: seoTitle,
-              type: 'image/jpeg',
-            },
-          ],
-          siteName: 'Rinneagan Portfolio',
-        }}
-        twitter={{
-          handle: '@your-twitter-handle',
-          site: '@your-twitter-handle',
-          cardType: 'summary_large_image',
-        }}
-        additionalMetaTags={[
-          {
-            name: 'keywords',
-            content: seoKeywords.join(', '),
-          },
-          {
-            name: 'author',
-            content: seoAuthor,
-          },
-          {
-            name: 'viewport',
-            content: 'width=device-width, initial-scale=1',
-          },
-          {
-            name: 'theme-color',
-            content: '#000000',
-          },
-          {
-            property: 'article:section',
-            content: section || 'Technology',
-          },
-          {
-            property: 'article:tag',
-            content: tags?.join(', ') || seoKeywords.join(', '),
-          },
-        ]}
-        language="en"
-      />
+    <Head>
+      <title>{seoTitle}</title>
+      <meta name="description" content={seoDescription} />
+      <meta name="keywords" content={seoKeywords.join(', ')} />
+      <meta name="author" content={seoAuthor} />
       
+      {/* Open Graph */}
+      <meta property="og:title" content={seoTitle} />
+      <meta property="og:description" content={seoDescription} />
+      <meta property="og:url" content={seoUrl} />
+      <meta property="og:type" content={type} />
+      <meta property="og:image" content={seoImage} />
+      <meta property="og:image:width" content="1200" />
+      <meta property="og:image:height" content="630" />
+      <meta property="og:site_name" content="Rinneagan Portfolio" />
+      
+      {/* Twitter */}
+      <meta name="twitter:card" content="summary_large_image" />
+      <meta name="twitter:title" content={seoTitle} />
+      <meta name="twitter:description" content={seoDescription} />
+      <meta name="twitter:image" content={seoImage} />
+      
+      {/* Additional Meta */}
+      <meta name="viewport" content="width=device-width, initial-scale=1" />
+      <meta name="theme-color" content="#000000" />
+      <link rel="canonical" href={seoUrl} />
+      
+      {/* Article specific meta */}
       {publishedDate && (
         <meta property="article:published_time" content={publishedDate} />
       )}
       {modifiedDate && (
         <meta property="article:modified_time" content={modifiedDate} />
+      )}
+      {section && (
+        <meta property="article:section" content={section} />
+      )}
+      {tags && tags.length > 0 && (
+        <meta property="article:tag" content={tags.join(', ')} />
       )}
       
       {/* Structured Data */}
@@ -132,11 +98,9 @@ export function SEO({
             description: seoDescription,
             url: seoUrl,
             image: seoImage,
-            author: {
-              '@type': 'Person',
-              name: seoAuthor,
-              url: 'https://github.com/Rinneagan',
-            },
+            author: seoAuthor,
+            datePublished: publishedDate,
+            dateModified: modifiedDate,
             publisher: {
               '@type': 'Organization',
               name: 'Rinneagan Portfolio',
