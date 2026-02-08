@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Star, GitFork, ExternalLink, Code, Eye } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { TechStackIcons } from '@/components/TechStackIcons';
 
 interface ProjectCardProps {
   repo: GitHubRepo;
@@ -60,12 +61,11 @@ export function ProjectCard({ repo, className, onViewDetails }: ProjectCardProps
       
       <CardContent className="flex-1 flex flex-col gap-4">
         <div className="flex flex-wrap gap-1 min-h-[24px]">
-          {repo.language && (
-            <Badge variant="secondary" className="flex items-center gap-1">
-              <div className={cn('w-2 h-2 rounded-full', getLanguageColor(repo.language))} />
-              {repo.language}
-            </Badge>
-          )}
+          <TechStackIcons 
+            language={repo.language} 
+            topics={repo.topics}
+            className="mb-2"
+          />
           {repo.topics.slice(0, 3).map((topic) => (
             <Badge key={topic} variant="outline" className="text-xs">
               {topic}

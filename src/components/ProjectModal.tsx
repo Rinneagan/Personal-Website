@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { GitHubRepo } from '@/lib/github';
 import { ExternalLink, Github, Calendar, GitFork, Star, Users } from 'lucide-react';
+import { TechStackIcons } from '@/components/TechStackIcons';
 
 interface ProjectModalProps {
   repo: GitHubRepo;
@@ -75,12 +76,19 @@ export function ProjectModal({ repo, isOpen, onClose }: ProjectModalProps) {
           {repo.topics.length > 0 && (
             <div>
               <h3 className="text-lg font-semibold mb-2">Technologies & Topics</h3>
-              <div className="flex flex-wrap gap-2">
-                {repo.topics.map((topic) => (
-                  <Badge key={topic} variant="outline">
-                    {topic}
-                  </Badge>
-                ))}
+              <div className="space-y-3">
+                <TechStackIcons 
+                  language={repo.language} 
+                  topics={repo.topics}
+                  className="flex-wrap gap-2"
+                />
+                <div className="flex flex-wrap gap-2">
+                  {repo.topics.map((topic) => (
+                    <Badge key={topic} variant="outline">
+                      {topic}
+                    </Badge>
+                  ))}
+                </div>
               </div>
             </div>
           )}
