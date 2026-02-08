@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { GitHubUser } from '@/lib/github';
+import { GitHubHeatmap } from '@/components/GitHubHeatmap';
 import { 
   User, 
   Code, 
@@ -314,11 +315,21 @@ export function AboutSection({ user }: AboutSectionProps) {
         </Card>
       </motion.div>
 
+      {/* GitHub Activity Heatmap */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 1.1 }}
+        className="mb-8"
+      >
+        <GitHubHeatmap username="Rinneagan" />
+      </motion.div>
+
       {/* Call to Action */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 1.0 }}
+        transition={{ delay: 1.2 }}
         className="text-center"
       >
         <Card>
