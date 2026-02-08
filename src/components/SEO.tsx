@@ -104,89 +104,10 @@ export default function SEO({
             publisher: {
               '@type': 'Organization',
               name: 'Rinneagan Portfolio',
-              logo: {
-                '@type': 'ImageObject',
-                url: '/logo.jpg',
-              },
-            },
-            datePublished: publishedDate,
-            dateModified: modifiedDate,
-            mainEntityOfPage: {
-              '@type': 'WebPage',
-              '@id': seoUrl,
             },
           }),
         }}
       />
-      
-      {/* Breadcrumb Structured Data */}
-      <BreadcrumbJsonLd
-        itemListElements={[
-          {
-            position: 1,
-            name: 'Home',
-            item: 'https://your-portfolio-url.com',
-          },
-          ...(section ? [{
-            position: 2,
-            name: section,
-            item: `https://your-portfolio-url.com/${section.toLowerCase()}`,
-          }] : []),
-        ]}
-      />
-    </>
-  );
-}
-
-// Component for specific page SEO
-export function PageSEO({ 
-  page, 
-  title, 
-  description, 
-  keywords 
-}: { 
-  page: string;
-  title?: string;
-  description?: string;
-  keywords?: string[];
-}) {
-  const pageTitle = title || `${page} - Rinneagan Portfolio`;
-  const pageDescription = description || `Explore ${page.toLowerCase()} in Rinneagan's portfolio. ${DEFAULT_SEO.description}`;
-  const pageKeywords = keywords || [page.toLowerCase(), ...DEFAULT_SEO.keywords];
-
-  return (
-    <SEO
-      title={pageTitle}
-      description={pageDescription}
-      keywords={pageKeywords}
-      url={`https://your-portfolio-url.com/${page.toLowerCase()}`}
-      section={page}
-    />
-  );
-}
-
-// Component for project-specific SEO
-export function ProjectSEO({ 
-  project, 
-  description, 
-  tags, 
-  imageUrl 
-}: { 
-  project: string;
-  description?: string;
-  tags?: string[];
-  imageUrl?: string;
-}) {
-  return (
-    <SEO
-      title={`${project} - Project by Rinneagan`}
-      description={description || `Explore the ${project} project by Rinneagan. ${DEFAULT_SEO.description}`}
-      keywords={[project, 'project', 'github', 'repository', ...(tags || [])]}
-      url={`https://your-portfolio-url.com/projects/${project.toLowerCase().replace(/\s+/g, '-')}`}
-      image={imageUrl}
-      type="article"
-      section="Projects"
-      tags={tags}
-    />
+    </Head>
   );
 }
