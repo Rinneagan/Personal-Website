@@ -4,12 +4,14 @@ import { useState, useEffect } from 'react';
 import { ProfileHeader } from '@/components/ProfileHeader';
 import { ProjectCard } from '@/components/ProjectCard';
 import { ProjectModal } from '@/components/ProjectModal';
+import { ProjectTimeline } from '@/components/ProjectTimeline';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { ThemeToggle } from '@/components/ThemeToggle';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { GitHubUser, GitHubRepo } from '@/lib/github';
 import { getUserInfo, getUserRepos } from '@/lib/github';
-import { Search, Code } from 'lucide-react';
+import { Search, Code, Clock } from 'lucide-react';
 
 export default function Home() {
   const [user, setUser] = useState<GitHubUser | null>(null);
@@ -22,6 +24,7 @@ export default function Home() {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const username = 'Rinneagan'; // Replace with your GitHub username
+  const [activeTab, setActiveTab] = useState('projects');
 
   useEffect(() => {
     async function fetchData() {
@@ -96,61 +99,83 @@ export default function Home() {
         
         {user && <ProfileHeader user={user} />}
 
-        <div className="mt-8 space-y-6">
-          <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
-            <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                placeholder="Search repositories..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
+        <div className="mt-8">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="projects" className="flex items-center gap-2">
+                <Code className="w-4 h-4" />
+                Projects
+              </TabsTrigger>
+              <TabsTrigger value="timeline" className="flex items-center gap-2">
+                <Clock className="w-4 h-4" />
+                Timeline
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="projects" className="space-y-6 mt-6">
+              <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
+                <div className="relative flex-1 max-w-md">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search repositories..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+                
+                <div className="flex flex-wrap gap-2">
+                  <Badge
+                    variant={selectedLanguage === null ? "default" : "outline"}
+                    className="cursor-pointer"
+                    onClick={() => setSelectedLanguage(null)}
+                  >
+                    All
+                  </Badge>
+                  {languages.map((language) => (
+                    <Badge
+                      key={language}
+                      variant={selectedLanguage === language ? "default" : "outline"}
+                      className="cursor-pointer"
+                      onClick={() => setSelectedLanguage(
+                        selectedLanguage === language ? null : language
+                      )}
+                    >
+                      {language}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+
+              <div className="text-sm text-muted-foreground">
+                {filteredRepos.length} {filteredRepos.length === 1 ? 'repository' : 'repositories'} found
+              </div>
+
+              {filteredRepos.length === 0 ? (
+                <div className="text-center py-12">
+                  <Code className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+                  <p className="text-muted-foreground">No repositories found matching your criteria.</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {filteredRepos.map((repo) => (
+                    <ProjectCard 
+                      key={repo.id} 
+                      repo={repo} 
+                      onViewDetails={handleViewDetails}
+                    />
+                  ))}
+                </div>
+              )}
+            </TabsContent>
+
+            <TabsContent value="timeline" className="mt-6">
+              <ProjectTimeline 
+                repos={repos} 
+                onViewDetails={handleViewDetails}
               />
-            </div>
-            
-            <div className="flex flex-wrap gap-2">
-              <Badge
-                variant={selectedLanguage === null ? "default" : "outline"}
-                className="cursor-pointer"
-                onClick={() => setSelectedLanguage(null)}
-              >
-                All
-              </Badge>
-              {languages.map((language) => (
-                <Badge
-                  key={language}
-                  variant={selectedLanguage === language ? "default" : "outline"}
-                  className="cursor-pointer"
-                  onClick={() => setSelectedLanguage(
-                    selectedLanguage === language ? null : language
-                  )}
-                >
-                  {language}
-                </Badge>
-              ))}
-            </div>
-          </div>
-
-          <div className="text-sm text-muted-foreground">
-            {filteredRepos.length} {filteredRepos.length === 1 ? 'repository' : 'repositories'} found
-          </div>
-
-          {filteredRepos.length === 0 ? (
-            <div className="text-center py-12">
-              <Code className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-              <p className="text-muted-foreground">No repositories found matching your criteria.</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredRepos.map((repo) => (
-                <ProjectCard 
-                  key={repo.id} 
-                  repo={repo} 
-                  onViewDetails={handleViewDetails}
-                />
-              ))}
-            </div>
-          )}
+            </TabsContent>
+          </Tabs>
         </div>
         
         {selectedRepo && (
