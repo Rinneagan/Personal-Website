@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { VisitorMap } from '@/components/VisitorMap';
+import { RealTimeVisitorMap } from '@/components/RealTimeVisitorMap';
 import { DeploymentHelper } from '@/components/DeploymentHelper';
 import { 
   Settings, 
@@ -62,7 +63,7 @@ export function MyTools({ className = '' }: MyToolsProps) {
 
             {/* Tab Content */}
             {activeTab === 'visitor-map' ? (
-              <VisitorMap />
+              <RealTimeVisitorMap />
             ) : (
               <DeploymentHelper />
             )}

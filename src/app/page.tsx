@@ -169,7 +169,7 @@ export default function Home() {
 
             <div className="mt-8">
               <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <TabsList className="grid w-full grid-cols-5">
+                <TabsList className="grid w-full grid-cols-5 md:grid-cols-5 lg:grid-cols-5">
                   <TabsTrigger value="about" className="flex items-center gap-2">
                     <User className="w-4 h-4" />
                     About
@@ -185,6 +185,10 @@ export default function Home() {
                   <TabsTrigger value="skills" className="flex items-center gap-2">
                     <Award className="w-4 h-4" />
                     Skills
+                  </TabsTrigger>
+                  <TabsTrigger value="tools" className="flex items-center gap-2">
+                    <Settings className="w-4 h-4" />
+                    My Tools
                   </TabsTrigger>
                   <TabsTrigger value="contact" className="flex items-center gap-2">
                     <Mail className="w-4 h-4" />
