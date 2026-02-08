@@ -194,8 +194,6 @@ export function ProjectModal({ repo, isOpen, onClose }: ProjectModalProps) {
             />
           </TabsContent>
         </Tabs>
-          </div>
-        </motion.div>
       </DialogContent>
     </Dialog>
   );
