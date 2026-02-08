@@ -36,8 +36,9 @@ export async function getUserRepos(username: string): Promise<GitHubRepo[]> {
       {
         headers: {
           'Accept': 'application/vnd.github.v3+json',
+          'Cache-Control': 'no-cache',
         },
-        next: { revalidate: 3600 } // Cache for 1 hour
+        next: { revalidate: 300 } // Cache for 5 minutes for more frequent updates
       }
     );
 
@@ -55,15 +56,14 @@ export async function getUserRepos(username: string): Promise<GitHubRepo[]> {
 
 export async function getUserInfo(username: string): Promise<GitHubUser | null> {
   try {
-    const headers: Record<string, string> = {
-      'Accept': 'application/vnd.github.v3+json',
-    };
-
     const response = await fetch(
       `${GITHUB_API_BASE}/users/${username}`,
       {
-        headers,
-        next: { revalidate: 3600 } // Cache for 1 hour
+        headers: {
+          'Accept': 'application/vnd.github.v3+json',
+          'Cache-Control': 'no-cache',
+        },
+        next: { revalidate: 300 } // Cache for 5 minutes for more frequent updates
       }
     );
 

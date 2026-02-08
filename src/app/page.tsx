@@ -8,14 +8,16 @@ import { ProjectTimeline } from '@/components/ProjectTimeline';
 import { SkillsSection } from '@/components/SkillsSection';
 import { ContactForm } from '@/components/ContactForm';
 import { AboutSection } from '@/components/AboutSection';
+import { UpdateNotification } from '@/components/UpdateNotification';
 import { PageTransition, TabTransition, SectionTransition } from '@/components/PageTransition';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { GitHubUser, GitHubRepo } from '@/lib/github';
 import { getUserInfo, getUserRepos } from '@/lib/github';
-import { Search, Code, Clock, Award, Mail, User } from 'lucide-react';
+import { Search, Code, Clock, Award, Mail, User, RefreshCw } from 'lucide-react';
 
 export default function Home() {
   const [user, setUser] = useState<GitHubUser | null>(null);
@@ -26,6 +28,10 @@ export default function Home() {
   const [selectedLanguage, setSelectedLanguage] = useState<string | null>(null);
   const [selectedRepo, setSelectedRepo] = useState<GitHubRepo | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
+  const [previousRepoCount, setPreviousRepoCount] = useState(0);
+  const [showNotification, setShowNotification] = useState(false);
 
   const username = 'Rinneagan'; // Replace with your GitHub username
   const [activeTab, setActiveTab] = useState('projects');
@@ -83,6 +89,36 @@ export default function Home() {
     setSelectedRepo(null);
   };
 
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    setShowNotification(false);
+    try {
+      const [userData, reposData] = await Promise.all([
+        getUserInfo(username),
+        getUserRepos(username)
+      ]);
+      
+      setUser(userData);
+      setRepos(reposData);
+      setFilteredRepos(reposData);
+      setLastUpdated(new Date());
+      setPreviousRepoCount(reposData.length);
+    } catch (error) {
+      console.error('Error refreshing data:', error);
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  // Auto-refresh every 5 minutes
+  useEffect(() => {
+    const interval = setInterval(() => {
+      handleRefresh();
+    }, 5 * 60 * 1000); // 5 minutes
+
+    return () => clearInterval(interval);
+  }, [username]);
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -98,8 +134,23 @@ export default function Home() {
     <PageTransition>
       <div className="min-h-screen bg-background">
         <div className="container mx-auto px-4 py-8 max-w-6xl">
-          <div className="flex justify-end mb-4">
-            <ThemeToggle />
+          <div className="flex justify-between items-center mb-4">
+            <div className="text-sm text-muted-foreground">
+              Last updated: {lastUpdated.toLocaleTimeString()}
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleRefresh}
+                disabled={refreshing}
+                className="flex items-center gap-2"
+              >
+                <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
+                {refreshing ? 'Updating...' : 'Refresh'}
+              </Button>
+              <ThemeToggle />
+            </div>
           </div>
           
           <SectionTransition animation="slideUp">
@@ -226,6 +277,14 @@ export default function Home() {
               repo={selectedRepo}
               isOpen={isModalOpen}
               onClose={handleCloseModal}
+            />
+          )}
+          
+          {showNotification && (
+            <UpdateNotification
+              newRepos={repos.slice(0, repos.length - previousRepoCount)}
+              onDismiss={() => setShowNotification(false)}
+              onRefresh={handleRefresh}
             />
           )}
         </div>

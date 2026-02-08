@@ -128,28 +128,28 @@ export function ProjectTimeline({ repos, onViewDetails }: ProjectTimelineProps) 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: yearIndex * 0.1 + 0.2 }}
-              className="relative"
+              className="relative mb-8"
             >
               {/* Timeline Dot */}
-              <div className="absolute left-0 top-4 w-4 h-4 bg-white border-4 border-blue-500 rounded-full z-10"></div>
+              <div className="absolute left-0 top-2 w-3 h-3 bg-white border-4 border-blue-500 rounded-full z-10"></div>
               
               {/* Timeline Line */}
               {yearIndex < timelineData.length - 1 && (
-                <div className="absolute left-2 top-8 w-0.5 h-full bg-gray-300"></div>
+                <div className="absolute left-1.5 top-5 w-0.5 h-full bg-gray-300"></div>
               )}
 
               {/* Month Header */}
-              <div className="ml-8 mb-4">
-                <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-200">
+              <div className="ml-6 mb-3">
+                <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200">
                   {item.month}
                 </h3>
-                <div className="text-sm text-muted-foreground">
+                <div className="text-xs text-muted-foreground">
                   {item.repos.length} project{item.repos.length !== 1 ? 's' : ''}
                 </div>
               </div>
 
               {/* Projects for this month */}
-              <div className="ml-8 space-y-4">
+              <div className="ml-6 space-y-2">
                 {item.repos.map((repo, repoIndex) => (
                   <motion.div
                     key={repo.id}
@@ -160,11 +160,11 @@ export function ProjectTimeline({ repos, onViewDetails }: ProjectTimelineProps) 
                     }}
                   >
                     <Card className="hover:shadow-md transition-shadow">
-                      <CardContent className="p-4">
-                        <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+                      <CardContent className="p-3">
+                        <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-3">
                           <div className="flex-1">
                             <div className="flex items-center gap-2 mb-2">
-                              <h4 className="font-semibold text-lg">{repo.name}</h4>
+                              <h4 className="font-semibold text-sm">{repo.name}</h4>
                               {repo.language && (
                                 <Badge variant="secondary" className="text-xs">
                                   {repo.language}
@@ -173,12 +173,12 @@ export function ProjectTimeline({ repos, onViewDetails }: ProjectTimelineProps) 
                             </div>
                             
                             {repo.description && (
-                              <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
+                              <p className="text-xs text-muted-foreground mb-2 line-clamp-2">
                                 {repo.description}
                               </p>
                             )}
 
-                            <div className="flex items-center gap-4 text-xs text-muted-foreground mb-3">
+                            <div className="flex items-center gap-3 text-xs text-muted-foreground mb-2">
                               <div className="flex items-center gap-1">
                                 <Calendar className="w-3 h-3" />
                                 <span>{new Date(repo.created_at).toLocaleDateString()}</span>
@@ -196,7 +196,7 @@ export function ProjectTimeline({ repos, onViewDetails }: ProjectTimelineProps) 
                             <TechStackIcons 
                               language={repo.language} 
                               topics={repo.topics}
-                              className="mb-3"
+                              className="mb-2"
                             />
                           </div>
 
@@ -205,12 +205,12 @@ export function ProjectTimeline({ repos, onViewDetails }: ProjectTimelineProps) 
                               size="sm" 
                               variant="outline"
                               onClick={() => onViewDetails?.(repo)}
-                              className="flex items-center gap-2"
+                              className="flex items-center gap-2 text-xs h-8"
                             >
                               <Code className="w-3 h-3" />
                               Details
                             </Button>
-                            <Button asChild size="sm" className="flex items-center gap-2">
+                            <Button asChild size="sm" className="flex items-center gap-2 text-xs h-8">
                               <a
                                 href={repo.html_url}
                                 target="_blank"
