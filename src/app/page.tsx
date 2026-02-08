@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { ProfileHeader } from '@/components/ProfileHeader';
 import { ProjectCard } from '@/components/ProjectCard';
 import { ProjectModal } from '@/components/ProjectModal';
@@ -16,8 +16,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { GitHubUser, GitHubRepo } from '@/lib/github';
-import { getUserInfo, getUserRepos } from '@/lib/github';
+import { GitHubUser, GitHubRepo, getUserInfo, getUserRepos, testGitHubAPI } from '@/lib/github';
 import { Search, Code, Clock, Award, Mail, User } from 'lucide-react';
 
 export default function Home() {
@@ -32,18 +31,45 @@ export default function Home() {
 
   const username = 'Rinneagan'; // Replace with your GitHub username
   const [activeTab, setActiveTab] = useState('projects');
+  const dataLoadedRef = useRef(false);
 
   useEffect(() => {
     async function fetchData() {
       try {
+        // Test GitHub API first
+        console.log('Testing GitHub API connectivity...');
+        const apiTest = await testGitHubAPI();
+        console.log('GitHub API test result:', apiTest);
+        
+        if (!apiTest) {
+          console.error('GitHub API test failed - skipping data fetch');
+          setLoading(false);
+          return;
+        }
+        
+        console.log('GitHub API test passed - fetching user data...');
+        
         const [userData, reposData] = await Promise.all([
           getUserInfo(username),
           getUserRepos(username)
         ]);
         
-        setUser(userData);
-        setRepos(reposData);
-        setFilteredRepos(reposData);
+        if (userData) {
+          setUser(userData);
+          dataLoadedRef.current = true;
+          console.log('User data set successfully');
+        } else {
+          console.error('Failed to fetch user data');
+        }
+        
+        if (reposData && reposData.length > 0) {
+          setRepos(reposData);
+          setFilteredRepos(reposData);
+          dataLoadedRef.current = true;
+          console.log('Repos data set successfully');
+        } else {
+          console.log('No repositories found or API error');
+        }
       } catch (error) {
         console.error('Error fetching data:', error);
       } finally {
@@ -52,6 +78,14 @@ export default function Home() {
     }
 
     fetchData();
+    
+    // Force loading to complete after 10 seconds if API is completely stuck
+    const timeout = setTimeout(() => {
+      setLoading(false);
+      console.log('Loading timeout reached - API may be having issues');
+    }, 10000);
+
+    return () => clearTimeout(timeout);
   }, [username]);
 
   useEffect(() => {
