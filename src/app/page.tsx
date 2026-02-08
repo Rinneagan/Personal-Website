@@ -7,7 +7,8 @@ import { ProjectModal } from '@/components/ProjectModal';
 import { ProjectTimeline } from '@/components/ProjectTimeline';
 import { SkillsSection } from '@/components/SkillsSection';
 import { ContactForm } from '@/components/ContactForm';
-import { AboutSection } from '@/components/AboutSection';
+import { DeploymentSection } from '@/components/DeploymentSection';
+import { CollaborationSection } from '@/components/CollaborationSection';
 import { PageTransition, TabTransition, SectionTransition } from '@/components/PageTransition';
 import { SEOHead, PageSEO } from '@/components/SEOHead';
 import { SearchAutocomplete, SearchSuggestions } from '@/components/SearchAutocomplete';
@@ -230,68 +231,59 @@ export default function Home() {
                         <div className="mt-4">
                           <SearchSuggestions
                             repos={repos}
-                            onSuggestionClick={handleSuggestionClick}
-                          />
-                        </div>
-                      )}
-
-                      <div className="text-sm text-muted-foreground mt-4">
-                        {filteredRepos.length} {filteredRepos.length === 1 ? 'repository' : 'repositories'} found
-                      </div>
-
-                      {filteredRepos.length === 0 ? (
-                        <div className="text-center py-12">
-                          <Code className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-                          <p className="text-muted-foreground">No repositories found matching your criteria.</p>
-                        </div>
-                      ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                          {filteredRepos.map((repo) => (
-                            <ProjectCard 
-                              key={repo.id} 
-                              repo={repo} 
-                              onViewDetails={handleViewDetails}
-                            />
-                          ))}
-                        </div>
-                      )}
-                    </SectionTransition>
-                  </TabsContent>
-                </TabTransition>
-
-                <TabTransition isActive={activeTab === 'timeline'}>
-                  <TabsContent value="timeline" className="mt-6">
-                    <ProjectTimeline 
-                      repos={repos} 
-                      onViewDetails={handleViewDetails}
                     />
-                  </TabsContent>
-                </TabTransition>
+                  ))}
+                </div>
+                {filteredRepos.length === 0 && (
+                  <div className="text-center py-12">
+                    <Code className="w-8 h-8 mx-auto mb-4 text-muted-foreground" />
+                    <p className="text-muted-foreground">No projects found matching your criteria.</p>
+                  </div>
+                )}
+              </SectionTransition>
+            </TabsContent>
 
-                <TabTransition isActive={activeTab === 'skills'}>
-                  <TabsContent value="skills" className="mt-6">
-                    <SkillsSection repos={repos} />
-                  </TabsContent>
-                </TabTransition>
+            <TabsContent value="timeline">
+              <SectionTransition>
+                <ProjectTimeline repos={repos} />
+              </SectionTransition>
+            </TabsContent>
 
-                <TabTransition isActive={activeTab === 'contact'}>
-                  <TabsContent value="contact" className="mt-6">
-                    <ContactForm user={user} />
-                  </TabsContent>
-                </TabTransition>
-              </Tabs>
-            </div>
-            
-            {selectedRepo && (
-              <ProjectModal
-                repo={selectedRepo}
-                isOpen={isModalOpen}
-                onClose={handleCloseModal}
-              />
-            )}
-          </div>
-        </div>
-      </PageTransition>
-    </>
-  );
-}
+            <TabsContent value="skills">
+              <SectionTransition>
+                <SkillsSection />
+              </SectionTransition>
+            </TabsContent>
+
+            <TabsContent value="deployment">
+              <SectionTransition>
+                <DeploymentSection />
+              </SectionTransition>
+            </TabsContent>
+
+            <TabsContent value="collaboration">
+              <SectionTransition>
+                <CollaborationSection />
+              </SectionTransition>
+            </TabsContent>
+
+            <TabsContent value="contact">
+              <SectionTransition>
+                <ContactForm />
+              </SectionTransition>
+            </TabsContent>
+          </TabTransition>
+        </Tabs>
+
+        <ProjectModal
+          repo={selectedRepo}
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+        />
+      </div>
+    </PageTransition>
+    <PageSEO />
+  </div>
+</PageTransition>
+</>
+);
