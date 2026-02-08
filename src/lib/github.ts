@@ -7,14 +7,13 @@ export interface GitHubRepo {
   stargazers_count: number;
   forks_count: number;
   updated_at: string;
-  created_at?: string;
+  created_at: string;
   topics: string[];
   homepage: string | null;
   license: {
     name: string;
   } | null;
   size: number;
-  fork: boolean;
 }
 
 export interface GitHubUser {
@@ -37,9 +36,8 @@ export async function getUserRepos(username: string): Promise<GitHubRepo[]> {
       {
         headers: {
           'Accept': 'application/vnd.github.v3+json',
-          'Cache-Control': 'no-cache',
         },
-        next: { revalidate: 300 } // Cache for 5 minutes for more frequent updates
+        next: { revalidate: 3600 } // Cache for 1 hour
       }
     );
 
@@ -48,7 +46,7 @@ export async function getUserRepos(username: string): Promise<GitHubRepo[]> {
     }
 
     const repos = await response.json();
-    return repos.filter((repo: GitHubRepo) => !repo.fork);
+    return repos.filter((repo: any) => !repo.fork);
   } catch (error) {
     console.error('Error fetching repositories:', error);
     return [];
@@ -62,9 +60,8 @@ export async function getUserInfo(username: string): Promise<GitHubUser | null> 
       {
         headers: {
           'Accept': 'application/vnd.github.v3+json',
-          'Cache-Control': 'no-cache',
         },
-        next: { revalidate: 300 } // Cache for 5 minutes for more frequent updates
+        next: { revalidate: 3600 } // Cache for 1 hour
       }
     );
 
