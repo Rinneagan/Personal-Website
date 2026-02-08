@@ -5,13 +5,14 @@ import { ProfileHeader } from '@/components/ProfileHeader';
 import { ProjectCard } from '@/components/ProjectCard';
 import { ProjectModal } from '@/components/ProjectModal';
 import { ProjectTimeline } from '@/components/ProjectTimeline';
+import { SkillsSection } from '@/components/SkillsSection';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { GitHubUser, GitHubRepo } from '@/lib/github';
 import { getUserInfo, getUserRepos } from '@/lib/github';
-import { Search, Code, Clock } from 'lucide-react';
+import { Search, Code, Clock, Award } from 'lucide-react';
 
 export default function Home() {
   const [user, setUser] = useState<GitHubUser | null>(null);
@@ -101,7 +102,7 @@ export default function Home() {
 
         <div className="mt-8">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
+            <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="projects" className="flex items-center gap-2">
                 <Code className="w-4 h-4" />
                 Projects
@@ -109,6 +110,10 @@ export default function Home() {
               <TabsTrigger value="timeline" className="flex items-center gap-2">
                 <Clock className="w-4 h-4" />
                 Timeline
+              </TabsTrigger>
+              <TabsTrigger value="skills" className="flex items-center gap-2">
+                <Award className="w-4 h-4" />
+                Skills
               </TabsTrigger>
             </TabsList>
 
@@ -174,6 +179,10 @@ export default function Home() {
                 repos={repos} 
                 onViewDetails={handleViewDetails}
               />
+            </TabsContent>
+
+            <TabsContent value="skills" className="mt-6">
+              <SkillsSection repos={repos} />
             </TabsContent>
           </Tabs>
         </div>
