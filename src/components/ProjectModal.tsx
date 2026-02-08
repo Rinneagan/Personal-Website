@@ -6,9 +6,10 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { GitHubRepo } from '@/lib/github';
-import { ExternalLink, Github, Calendar, GitFork, Star, Users, MessageCircle, Code } from 'lucide-react';
+import { ExternalLink, Github, Calendar, GitFork, Star, Users, MessageCircle, Code, Activity } from 'lucide-react';
 import { TechStackIcons } from '@/components/TechStackIcons';
 import { CommentsSystem } from '@/components/CommentsSystem';
+import { ProjectDNA } from '@/components/ProjectDNA';
 
 interface ProjectModalProps {
   repo: GitHubRepo;
@@ -44,7 +45,7 @@ export function ProjectModal({ repo, isOpen, onClose }: ProjectModalProps) {
         </DialogHeader>
         
         <Tabs defaultValue="overview" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="overview" className="flex items-center gap-2">
               <Code className="w-4 h-4" />
               Overview
@@ -52,6 +53,10 @@ export function ProjectModal({ repo, isOpen, onClose }: ProjectModalProps) {
             <TabsTrigger value="details" className="flex items-center gap-2">
               <Star className="w-4 h-4" />
               Details
+            </TabsTrigger>
+            <TabsTrigger value="dna" className="flex items-center gap-2">
+              <Activity className="w-4 h-4" />
+              DNA
             </TabsTrigger>
             <TabsTrigger value="discussion" className="flex items-center gap-2">
               <MessageCircle className="w-4 h-4" />
@@ -185,6 +190,16 @@ export function ProjectModal({ repo, isOpen, onClose }: ProjectModalProps) {
                 )}
               </div>
             </div>
+          </TabsContent>
+
+          <TabsContent value="dna" className="mt-6">
+            <ProjectDNA 
+              projectId={repo.id.toString()} 
+              projectName={repo.name}
+              projectDescription={repo.description}
+              projectLanguage={repo.language}
+              projectTopics={repo.topics}
+            />
           </TabsContent>
 
           <TabsContent value="discussion" className="mt-6">
