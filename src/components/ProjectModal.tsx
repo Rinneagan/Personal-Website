@@ -4,9 +4,11 @@ import { motion } from 'framer-motion';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { GitHubRepo } from '@/lib/github';
-import { ExternalLink, Github, Calendar, GitFork, Star, Users } from 'lucide-react';
+import { ExternalLink, Github, Calendar, GitFork, Star, Users, MessageCircle, Code } from 'lucide-react';
 import { TechStackIcons } from '@/components/TechStackIcons';
+import { CommentsSystem } from '@/components/CommentsSystem';
 
 interface ProjectModalProps {
   repo: GitHubRepo;
@@ -34,139 +36,164 @@ export function ProjectModal({ repo, isOpen, onClose }: ProjectModalProps) {
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-2xl">
+          <DialogTitle className="flex items-center gap-2">
+            <Github className="w-5 h-5" />
             {repo.name}
             <Badge variant="secondary">{repo.language || 'Unknown'}</Badge>
           </DialogTitle>
         </DialogHeader>
         
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3 }}
-          className="space-y-6"
-        >
-          {/* Screenshot Section */}
-          <div className="relative group">
-            <div className="overflow-hidden rounded-lg border bg-muted">
-              <img
-                src={getScreenshotUrl()}
-                alt={`${repo.name} screenshot`}
-                className="w-full h-64 object-cover transition-transform duration-300 group-hover:scale-105"
-              />
-            </div>
-            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg flex items-center justify-center">
-              <p className="text-white text-center px-4">
-                Project Screenshot
-              </p>
-            </div>
-          </div>
+        <Tabs defaultValue="overview" className="w-full">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="overview" className="flex items-center gap-2">
+              <Code className="w-4 h-4" />
+              Overview
+            </TabsTrigger>
+            <TabsTrigger value="details" className="flex items-center gap-2">
+              <Star className="w-4 h-4" />
+              Details
+            </TabsTrigger>
+            <TabsTrigger value="discussion" className="flex items-center gap-2">
+              <MessageCircle className="w-4 h-4" />
+              Discussion
+            </TabsTrigger>
+          </TabsList>
 
-          {/* Description */}
-          {repo.description && (
-            <div>
-              <h3 className="text-lg font-semibold mb-2">About</h3>
-              <p className="text-muted-foreground leading-relaxed">
-                {repo.description}
-              </p>
-            </div>
-          )}
+          <TabsContent value="overview" className="space-y-6 mt-6">
+            <div className="flex flex-col md:flex-row gap-6">
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold mb-3">About</h3>
+                {repo.description ? (
+                  <p className="text-muted-foreground leading-relaxed">
+                    {repo.description}
+                  </p>
+                ) : (
+                  <p className="text-muted-foreground italic">
+                    No description provided.
+                  </p>
+                )}
 
-          {/* Topics */}
-          {repo.topics.length > 0 && (
-            <div>
-              <h3 className="text-lg font-semibold mb-2">Technologies & Topics</h3>
-              <div className="space-y-3">
-                <TechStackIcons 
-                  language={repo.language} 
-                  topics={repo.topics}
-                  className="flex-wrap gap-2"
-                />
-                <div className="flex flex-wrap gap-2">
-                  {repo.topics.map((topic) => (
-                    <Badge key={topic} variant="outline">
-                      {topic}
-                    </Badge>
-                  ))}
+                <div className="mt-6">
+                  <h4 className="font-semibold mb-3">Technology Stack</h4>
+                  <TechStackIcons 
+                    language={repo.language} 
+                    topics={repo.topics}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <h4 className="font-semibold mb-3">Repository Stats</h4>
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-sm text-muted-foreground">⭐ Stars</span>
+                    <span className="font-medium">{repo.stargazers_count}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-muted-foreground">🍴 Forks</span>
+                    <span className="font-medium">{repo.forks_count}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-muted-foreground">📦 Size</span>
+                    <span className="font-medium">{repo.size} KB</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-muted-foreground">🔤 License</span>
+                    <span className="font-medium">
+                      {repo.license?.name || 'No License'}
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
-          )}
 
-          {/* Stats */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="flex items-center gap-2">
-              <Star className="w-4 h-4 text-yellow-500" />
-              <div>
-                <p className="font-semibold">{repo.stargazers_count}</p>
-                <p className="text-xs text-muted-foreground">Stars</p>
+            <div className="flex-shrink-0 space-y-4">
+              <div className="bg-muted/50 rounded-lg p-4">
+                <h4 className="font-semibold mb-3">Quick Links</h4>
+                <div className="space-y-2">
+                  <Button asChild className="w-full justify-start">
+                    <a
+                      href={repo.html_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <Github className="w-4 h-4 mr-2" />
+                      View on GitHub
+                    </a>
+                  </Button>
+                  {repo.homepage && (
+                    <Button variant="outline" asChild className="w-full justify-start">
+                      <a
+                        href={repo.homepage}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <ExternalLink className="w-4 h-4 mr-2" />
+                        Live Demo
+                      </a>
+                    </Button>
+                  )}
+                </div>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <GitFork className="w-4 h-4 text-blue-500" />
-              <div>
-                <p className="font-semibold">{repo.forks_count}</p>
-                <p className="text-xs text-muted-foreground">Forks</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <Calendar className="w-4 h-4 text-green-500" />
-              <div>
-                <p className="font-semibold text-sm">
-                  {new Date(repo.created_at).getFullYear()}
-                </p>
-                <p className="text-xs text-muted-foreground">Created</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <Calendar className="w-4 h-4 text-orange-500" />
-              <div>
-                <p className="font-semibold text-sm">
-                  {formatDate(repo.updated_at)}
-                </p>
-                <p className="text-xs text-muted-foreground">Updated</p>
-              </div>
-            </div>
-          </div>
+          </TabsContent>
 
-          {/* Action Buttons */}
-          <div className="flex flex-col sm:flex-row gap-3">
-            <Button asChild className="flex-1">
-              <a
-                href={repo.html_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-2"
-              >
-                <Github className="w-4 h-4" />
-                View on GitHub
-              </a>
-            </Button>
-            
-            {repo.homepage && (
-              <Button asChild variant="outline" className="flex-1">
-                <a
-                  href={repo.homepage}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-2"
-                >
-                  <ExternalLink className="w-4 h-4" />
-                  Live Demo
-                </a>
-              </Button>
-            )}
-          </div>
+          <TabsContent value="details" className="space-y-6 mt-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <h4 className="font-semibold mb-3">Repository Information</h4>
+                <div className="space-y-3">
+                  <div>
+                    <span className="text-sm text-muted-foreground">Created</span>
+                    <div className="font-medium">
+                      {formatDate(repo.created_at)}
+                    </div>
+                  </div>
+                  <div>
+                    <span className="text-sm text-muted-foreground">Last Updated</span>
+                    <div className="font-medium">
+                      {new Date(repo.updated_at).toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                      })}
+                    </div>
+                  </div>
+                  <div>
+                    <span className="text-sm text-muted-foreground">Language</span>
+                    <div className="font-medium">
+                      {repo.language || 'Not specified'}
+                    </div>
+                  </div>
+                </div>
+              </div>
 
-          {/* README Preview */}
-          <div>
-            <h3 className="text-lg font-semibold mb-2">Quick Info</h3>
-            <div className="text-sm text-muted-foreground space-y-1">
-              <p><strong>Repository:</strong> {repo.name}</p>
-              <p><strong>Main Language:</strong> {repo.language || 'Not specified'}</p>
-              <p><strong>License:</strong> {repo.license?.name || 'No license'}</p>
-              <p><strong>Size:</strong> {(repo.size / 1024).toFixed(2)} MB</p>
+              <div>
+                <h4 className="font-semibold mb-3">Topics & Tags</h4>
+                {repo.topics.length > 0 ? (
+                  <div className="flex flex-wrap gap-2">
+                    {repo.topics.map((topic) => (
+                      <Badge key={topic} variant="secondary">
+                        {topic}
+                      </Badge>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-muted-foreground italic">
+                    No topics specified.
+                  </p>
+                )}
+              </div>
             </div>
+          </TabsContent>
+
+          <TabsContent value="discussion" className="mt-6">
+            <CommentsSystem 
+              projectId={repo.id.toString()} 
+              projectName={repo.name}
+            />
+          </TabsContent>
+        </Tabs>
           </div>
         </motion.div>
       </DialogContent>
