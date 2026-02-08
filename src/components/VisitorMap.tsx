@@ -45,32 +45,51 @@ export function VisitorMap({ className = '' }: VisitorMapProps) {
   const [mapCenter, setMapCenter] = useState({ lat: 40.7128, lng: -74.0060 }); // Default to New York
   const [mapZoom, setMapZoom] = useState(2);
 
-  // Simulate real-time visitor data
+  // Simulate real-time visitor data generation function
+  const generateVisitorData = () => {
+    const cities = [
+      { name: 'New York', country: 'United States', lat: 40.7128, lng: -74.0060 },
+      { name: 'London', country: 'United Kingdom', lat: 51.5074, lng: -0.1278 },
+      { name: 'Tokyo', country: 'Japan', lat: 35.6762, lng: 139.6503 },
+      { name: 'Paris', country: 'France', lat: 48.8566, lng: 2.3522 },
+      { name: 'Sydney', country: 'Australia', lat: -33.8688, lng: 151.2093 },
+      { name: 'Toronto', country: 'Canada', lat: 43.6532, lng: -79.3832 },
+      { name: 'Berlin', country: 'Germany', lat: 52.5200, lng: 13.4050 },
+      { name: 'San Francisco', country: 'United States', lat: 37.7749, lng: -122.4194 },
+      { name: 'Mumbai', country: 'India', lat: 19.0760, lng: 72.8777 },
+      { name: 'São Paulo', country: 'Brazil', lat: -23.5505, lng: -46.6333 }
+    ];
+
+    const pages = ['/portfolio', '/projects', '/about', '/contact', '/blog'];
+    const referrers = ['google.com', 'github.com', 'linkedin.com', 'twitter.com', 'direct'];
+
+    const newVisitors: Visitor[] = [];
+    const visitorCount = Math.floor(Math.random() * 50) + 20; // 20-70 visitors
+
+    for (let i = 0; i < visitorCount; i++) {
+      const city = cities[Math.floor(Math.random() * cities.length)];
+      const page = pages[Math.floor(Math.random() * pages.length)];
+      const referrer = referrers[Math.floor(Math.random() * referrers.length)];
+      
+      newVisitors.push({
+        id: `visitor-${Date.now()}-${i}`,
+        location: {
+          city: city.name,
+          country: city.country,
+          coordinates: { lat: city.lat, lng: city.lng }
+        },
+        timestamp: new Date(Date.now() - Math.random() * 86400000).toISOString(), // Random time in last 24h
+        page,
+        duration: Math.floor(Math.random() * 300) + 30, // 30-330 seconds
+        referrer: Math.random() > 0.5 ? referrer : undefined,
+        userAgent: `Mozilla/5.0 (${['Windows', 'MacOS', 'Linux'][Math.floor(Math.random() * 3)]})`
+      });
+    }
+
+    return newVisitors;
+  };
+
   useEffect(() => {
-    const generateVisitorData = () => {
-      const cities = [
-        { name: 'New York', country: 'United States', lat: 40.7128, lng: -74.0060 },
-        { name: 'London', country: 'United Kingdom', lat: 51.5074, lng: -0.1278 },
-        { name: 'Tokyo', country: 'Japan', lat: 35.6762, lng: 139.6503 },
-        { name: 'Paris', country: 'France', lat: 48.8566, lng: 2.3522 },
-        { name: 'Sydney', country: 'Australia', lat: -33.8688, lng: 151.2093 },
-        { name: 'Toronto', country: 'Canada', lat: 43.6532, lng: -79.3832 },
-        { name: 'Berlin', country: 'Germany', lat: 52.5200, lng: 13.4050 },
-        { name: 'San Francisco', country: 'United States', lat: 37.7749, lng: -122.4194 },
-        { name: 'Mumbai', country: 'India', lat: 19.0760, lng: 72.8777 },
-        { name: 'São Paulo', country: 'Brazil', lat: -23.5505, lng: -46.6333 }
-      ];
-
-      const pages = ['/portfolio', '/projects', '/about', '/contact', '/blog'];
-      const referrers = ['google.com', 'github.com', 'linkedin.com', 'twitter.com', 'direct'];
-
-      const newVisitors: Visitor[] = [];
-      const visitorCount = Math.floor(Math.random() * 50) + 20; // 20-70 visitors
-
-      for (let i = 0; i < visitorCount; i++) {
-        const city = cities[Math.floor(Math.random() * cities.length)];
-        const page = pages[Math.floor(Math.random() * pages.length)];
-        const referrer = referrers[Math.floor(Math.random() * referrers.length)];
         
         newVisitors.push({
           id: `visitor-${Date.now()}-${i}`,
