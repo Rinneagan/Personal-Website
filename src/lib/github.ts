@@ -7,13 +7,14 @@ export interface GitHubRepo {
   stargazers_count: number;
   forks_count: number;
   updated_at: string;
-  created_at: string;
+  created_at?: string;
   topics: string[];
   homepage: string | null;
   license: {
     name: string;
   } | null;
   size: number;
+  fork: boolean;
 }
 
 export interface GitHubUser {

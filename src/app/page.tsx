@@ -47,6 +47,10 @@ export default function Home() {
         setUser(userData);
         setRepos(reposData);
         setFilteredRepos(reposData);
+        setLastUpdated(new Date());
+        setPreviousRepoCount(reposData.length);
+        
+        console.log('Fetched repos:', reposData.length, reposData.map(r => ({ name: r.name, fork: r.fork })));
       } catch (error) {
         console.error('Error fetching data:', error);
       } finally {
