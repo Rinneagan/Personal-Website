@@ -210,7 +210,11 @@ export function useRealTimeVisitors() {
   // Initialize session on mount
   useEffect(() => {
     const initSession = async () => {
-      sessionIdRef.current = `session-${Date.now()}`;
+      // Generate unique session ID for this browser/device
+      const existingSession = sessionStorage.getItem('visitorSession');
+      const sessionId = existingSession || `session-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      sessionIdRef.current = sessionId;
+      sessionStorage.setItem('visitorSession', sessionId);
       startTimeRef.current = Date.now();
       
       const location = await getVisitorLocation();
@@ -258,15 +262,27 @@ export function useRealTimeVisitors() {
     // Periodic updates for active visitors
     const interval = setInterval(() => {
       const now = Date.now();
-      setVisitors(prev => prev.map(visitor => {
-        const sessionAge = (now - new Date(visitor.timestamp).getTime()) / 1000;
-        const isActive = sessionAge < 1800; // Consider active if less than 30 minutes
+      setVisitors(prev => {
+        const updated = prev.map(visitor => {
+          const sessionAge = (now - new Date(visitor.timestamp).getTime()) / 1000;
+          const isActive = sessionAge < 1800; // Consider active if less than 30 minutes
+          
+          return {
+            ...visitor,
+            isActive: sessionAge < 1800
+          };
+        });
         
-        return {
-          ...visitor,
-          isActive: sessionAge < 1800
-        };
-      }));
+        // Update active visitors set based on actual active status
+        const activeSessionIds = new Set(
+          updated
+            .filter(v => v.isActive)
+            .map(v => v.sessionId)
+        );
+        setActiveVisitors(activeSessionIds);
+        
+        return updated;
+      });
     }, 10000); // Update every 10 seconds
 
     return () => {
