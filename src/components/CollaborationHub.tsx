@@ -304,14 +304,14 @@ export function CollaborationHub({
       <div className="flex items-start gap-4">
         <img
           src={collaborator.avatar_url}
-          alt={collaborator.name}
+          alt={collaborator.name || collaborator.login}
           className="w-12 h-12 rounded-full"
         />
         
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between mb-2">
             <div>
-              <h3 className="font-semibold text-lg">{collaborator.name}</h3>
+              <h3 className="font-semibold text-lg">{collaborator.name || collaborator.login}</h3>
               <p className="text-sm text-muted-foreground">@{collaborator.login}</p>
             </div>
             <div className="flex items-center gap-2">
@@ -528,14 +528,14 @@ export function CollaborationHub({
                   <div className="flex items-start gap-4 mb-6">
                     <img
                       src={selectedCollaborator.avatar_url}
-                      alt={selectedCollaborator.name}
+                      alt={selectedCollaborator.name || selectedCollaborator.login}
                       className="w-16 h-16 rounded-full"
                     />
                     
                     <div className="flex-1">
                       <div className="flex items-center justify-between mb-2">
                         <div>
-                          <h3 className="text-xl font-bold">{selectedCollaborator.name}</h3>
+                          <h3 className="text-xl font-bold">{selectedCollaborator.name || selectedCollaborator.login}</h3>
                           <p className="text-muted-foreground">@{selectedCollaborator.login}</p>
                         </div>
                         <div className="flex items-center gap-2">
