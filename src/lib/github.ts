@@ -14,6 +14,9 @@ export interface GitHubRepo {
     name: string;
   } | null;
   size: number;
+  owner: {
+    login: string;
+  };
 }
 
 export interface GitHubUser {

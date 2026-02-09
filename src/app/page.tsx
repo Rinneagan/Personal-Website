@@ -18,6 +18,7 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { GitHubUser, GitHubRepo, getUserInfo, getUserRepos, testGitHubAPI } from '@/lib/github';
 import { Search, Code, Clock, Award, Mail, User, Settings } from 'lucide-react';
+import { initializeFromUrl, updateUrlState } from '@/lib/urlState';
 
 export default function Home() {
   const [user, setUser] = useState<GitHubUser | null>(null);
@@ -40,6 +41,30 @@ export default function Home() {
     { id: 'contact', label: 'Contact', icon: Mail }
   ];
   const dataLoadedRef = useRef(false);
+
+  // Initialize from URL and handle URL updates
+  useEffect(() => {
+    const urlState = initializeFromUrl();
+    
+    // Set active tab from URL
+    if (urlState.section) {
+      setActiveTab(urlState.section);
+    }
+    
+    // Open modal if project is specified in URL
+    if (urlState.projectId && urlState.modal) {
+      const repo = repos.find(r => r.name === urlState.modal);
+      if (repo) {
+        setSelectedRepo(repo);
+        setIsModalOpen(true);
+      }
+    }
+  }, [repos]);
+
+  // Update URL when tab changes
+  useEffect(() => {
+    updateUrlState({ section: activeTab });
+  }, [activeTab]);
 
   useEffect(() => {
     async function fetchData() {

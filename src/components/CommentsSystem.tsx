@@ -46,114 +46,129 @@ export function CommentsSystem({ projectId, projectName, className = '' }: Comme
   const [isLoading, setIsLoading] = useState(false);
   const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'popular'>('newest');
 
-  // Mock data for demonstration
+  // Fetch real comments from API
   useEffect(() => {
-    const mockComments: Comment[] = [
-      {
-        id: '1',
-        author: 'Alex Chen',
-        avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Alex',
-        content: `This ${projectName} project is fantastic! The architecture is really well thought out and the code quality is impressive. Would love to see more details about the tech stack used.`,
-        timestamp: '2024-01-15T10:30:00Z',
-        likes: 12,
-        dislikes: 1,
-        projectId,
-        replies: [
-          {
-            id: '1-1',
-            author: 'Sarah Johnson',
-            avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah',
-            content: 'I agree! The component structure is particularly clean. Great work!',
-            timestamp: '2024-01-15T11:15:00Z',
-            likes: 3,
-            dislikes: 0,
-            projectId
-          }
-        ]
-      },
-      {
-        id: '2',
-        author: 'Marcus Williams',
-        avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Marcus',
-        content: `I've been following this project for a while. The recent updates have made it even better. Any plans for adding real-time collaboration features?`,
-        timestamp: '2024-01-14T15:45:00Z',
-        likes: 8,
-        dislikes: 2,
-        projectId,
-        replies: []
-      },
-      {
-        id: '3',
-        author: 'Emily Davis',
-        avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Emily',
-        content: 'The documentation is excellent! Made it super easy to understand and contribute. Thank you for putting so much effort into this.',
-        timestamp: '2024-01-13T09:20:00Z',
-        likes: 6,
-        dislikes: 0,
-        projectId,
-        replies: []
+    const fetchComments = async () => {
+      try {
+        const response = await fetch(`/api/comments?projectId=${projectId}`);
+        if (response.ok) {
+          const data = await response.json();
+          setComments(data.comments || []);
+        }
+      } catch (error) {
+        console.error('Failed to fetch comments:', error);
       }
-    ];
+    };
 
-    setComments(mockComments);
+    fetchComments();
   }, [projectId, projectName]);
 
-  const handleSubmitComment = () => {
+  const handleSubmitComment = async () => {
     if (!newComment.trim()) return;
 
-    const comment: Comment = {
-      id: Date.now().toString(),
-      author: 'Guest User',
-      content: newComment,
-      timestamp: new Date().toISOString(),
-      likes: 0,
-      dislikes: 0,
-      projectId,
-      replies: []
-    };
+    setIsLoading(true);
+    try {
+      const response = await fetch('/api/comments', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          projectId,
+          projectName,
+          author: 'Guest User',
+          content: newComment.trim()
+        }),
+      });
 
-    setComments([comment, ...comments]);
-    setNewComment('');
+      if (response.ok) {
+        const data = await response.json();
+        setComments(prev => [data.comment, ...prev]);
+        setNewComment('');
+      } else {
+        console.error('Failed to submit comment');
+      }
+    } catch (error) {
+      console.error('Error submitting comment:', error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleReply = (commentId: string) => {
+  const handleReply = async (commentId: string) => {
     if (!replyContent.trim()) return;
 
-    const reply: Comment = {
-      id: `${commentId}-${Date.now()}`,
-      author: 'Guest User',
-      content: replyContent,
-      timestamp: new Date().toISOString(),
-      likes: 0,
-      dislikes: 0,
-      projectId
-    };
+    try {
+      const response = await fetch('/api/comments', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          projectId,
+          projectName,
+          author: 'Guest User',
+          content: replyContent.trim()
+        }),
+      });
 
-    setComments(comments.map(comment => 
-      comment.id === commentId 
-        ? { ...comment, replies: [...(comment.replies || []), reply] }
-        : comment
-    ));
-
-    setReplyContent('');
-    setReplyingTo(null);
+      if (response.ok) {
+        const data = await response.json();
+        // Refresh comments to get the new reply
+        const commentsResponse = await fetch(`/api/comments?projectId=${projectId}`);
+        if (commentsResponse.ok) {
+          const commentsData = await commentsResponse.json();
+          setComments(commentsData.comments || []);
+        }
+        setReplyContent('');
+        setReplyingTo(null);
+      }
+    } catch (error) {
+      console.error('Error submitting reply:', error);
+    }
   };
 
-  const handleLike = (commentId: string, isReply: boolean = false) => {
-    setComments(comments.map(comment => {
-      if (comment.id === commentId) {
-        return { ...comment, likes: comment.likes + 1 };
+  const handleLike = async (commentId: string, isReply: boolean = false) => {
+    try {
+      const response = await fetch('/api/comments', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          commentId,
+          action: 'like'
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        
+        // Update the specific comment with new like count
+        setComments(comments.map(comment => {
+          if (comment.id === commentId) {
+            return data.comment;
+          }
+          if (comment.replies) {
+            return {
+              ...comment,
+              replies: comment.replies.map(reply => 
+                reply.id === commentId ? data.comment : reply
+              )
+            };
+          }
+          return comment;
+        }));
+
+        // Show feedback if user already liked
+        if (data.alreadyLiked) {
+          // You could show a toast or notification here
+          console.log('You already liked this comment');
+        }
       }
-      if (comment.replies) {
-        return {
-          ...comment,
-          replies: comment.replies.map(reply =>
-            reply.id === commentId ? { ...reply, likes: reply.likes + 1 } : reply
-          )
-        };
-      }
-      return comment;
-    }));
+    } catch (error) {
+      console.error('Error liking comment:', error);
+    }
   };
 
   const formatTimestamp = (timestamp: string) => {

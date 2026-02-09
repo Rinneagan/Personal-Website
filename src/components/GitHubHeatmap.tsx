@@ -23,6 +23,7 @@ export function GitHubHeatmap({ username, className = '' }: GitHubHeatmapProps) 
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
     totalContributions: 0,
+    activeDays: 0,
     currentStreak: 0,
     longestStreak: 0,
     averagePerDay: 0
@@ -60,19 +61,86 @@ export function GitHubHeatmap({ username, className = '' }: GitHubHeatmapProps) 
   };
 
   useEffect(() => {
+    // Fetch real activity data from GitHub API
     const fetchActivityData = async () => {
       setLoading(true);
       try {
-        // For demo purposes, generate mock data
-        // In production, you'd fetch from GitHub API:
-        // const response = await fetch(`https://api.github.com/users/${username}/events`);
-        // const events = await response.json();
-        // Process events to create activity data
+        const token = process.env.GITHUB_TOKEN;
         
-        const mockData = generateMockActivityData();
-        setActivityData(mockData);
+        const headers: Record<string, string> = {
+          'Accept': 'application/vnd.github.v3+json',
+        };
+        
+        if (token) {
+          headers['Authorization'] = `Bearer ${token}`;
+        }
+
+        // Fetch user events from GitHub API
+        const response = await fetch(`https://api.github.com/users/${username}/events?per_page=100`, {
+          headers,
+          next: { revalidate: 3600 } // Cache for 1 hour
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch GitHub activity');
+        }
+
+        const events = await response.json();
+        
+        // Process events to create activity data
+        const activityMap = new Map<string, number>();
+        const today = new Date();
+        const oneYearAgo = new Date(today);
+        oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+
+        // Initialize all days with 0 contributions
+        for (let d = new Date(oneYearAgo); d <= today; d.setDate(d.getDate() + 1)) {
+          const dateStr = d.toISOString().split('T')[0];
+          activityMap.set(dateStr, 0);
+        }
+
+        // Count contributions from events
+        events.forEach((event: any) => {
+          if (event.type === 'PushEvent' && event.created_at) {
+            const dateStr = new Date(event.created_at).toISOString().split('T')[0];
+            const currentCount = activityMap.get(dateStr) || 0;
+            activityMap.set(dateStr, currentCount + (event.payload.commits?.length || 1));
+          } else if (['PullRequestEvent', 'IssuesEvent', 'CreateEvent'].includes(event.type)) {
+            const dateStr = new Date(event.created_at).toISOString().split('T')[0];
+            const currentCount = activityMap.get(dateStr) || 0;
+            activityMap.set(dateStr, currentCount + 1);
+          }
+        });
+
+        const processedData: ActivityData[] = Array.from(activityMap.entries()).map(([date, count]) => ({
+          date,
+          count,
+          level: Math.min(4, Math.ceil(count / 2))
+        }));
+
+        setActivityData(processedData);
 
         // Calculate stats
+        const totalContributions = processedData.reduce((sum, day) => sum + day.count, 0);
+        const activeDays = processedData.filter(day => day.count > 0).length;
+        const currentStreak = calculateCurrentStreak(processedData);
+        const longestStreak = calculateLongestStreak(processedData);
+        const averagePerDay = Math.round(totalContributions / 365);
+
+        setStats({
+          totalContributions,
+          activeDays,
+          currentStreak,
+          longestStreak,
+          averagePerDay
+        });
+
+      } catch (error) {
+        console.error('Error fetching GitHub activity:', error);
+        // Fallback to mock data if API fails
+        const mockData = generateMockActivityData();
+        setActivityData(mockData);
+        
         const totalContributions = mockData.reduce((sum, day) => sum + day.count, 0);
         const activeDays = mockData.filter(day => day.count > 0).length;
         const currentStreak = calculateCurrentStreak(mockData);
@@ -81,12 +149,11 @@ export function GitHubHeatmap({ username, className = '' }: GitHubHeatmapProps) 
 
         setStats({
           totalContributions,
+          activeDays,
           currentStreak,
           longestStreak,
           averagePerDay
         });
-      } catch (error) {
-        console.error('Error fetching activity data:', error);
       } finally {
         setLoading(false);
       }
