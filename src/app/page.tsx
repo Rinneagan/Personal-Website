@@ -236,13 +236,13 @@ export default function Home() {
                 </TabsList>
 
                 <TabTransition isActive={activeTab === 'about'}>
-                  <TabsContent value="about" className="mt-6">
+                  <TabsContent value="about" className="mt-8">
                     <AboutSection user={user} />
                   </TabsContent>
                 </TabTransition>
 
                 <TabTransition isActive={activeTab === 'projects'}>
-                  <TabsContent value="projects" className="space-y-6 mt-6">
+                  <TabsContent value="projects" className="space-y-6 mt-8">
                     <SectionTransition animation="fadeIn">
                       <div className="flex flex-col lg:flex-row gap-6 items-start lg:items-center justify-between">
                         <div className="flex-1 max-w-md">
@@ -312,7 +312,7 @@ export default function Home() {
                 </TabTransition>
 
                 <TabTransition isActive={activeTab === 'timeline'}>
-                  <TabsContent value="timeline" className="mt-6">
+                  <TabsContent value="timeline" className="mt-8">
                     <ProjectTimeline 
                       repos={repos} 
                       onViewDetails={handleViewDetails}
@@ -321,19 +321,19 @@ export default function Home() {
                 </TabTransition>
 
                 <TabTransition isActive={activeTab === 'skills'}>
-                  <TabsContent value="skills" className="mt-6">
+                  <TabsContent value="skills" className="mt-8">
                     <SkillsSection repos={repos} />
                   </TabsContent>
                 </TabTransition>
                 
                 <TabTransition isActive={activeTab === 'tools'}>
-                  <TabsContent value="tools" className="mt-6">
+                  <TabsContent value="tools" className="mt-8">
                     <MyTools />
                   </TabsContent>
                 </TabTransition>
 
                 <TabTransition isActive={activeTab === 'contact'}>
-                  <TabsContent value="contact" className="mt-6">
+                  <TabsContent value="contact" className="mt-8">
                     <ContactForm user={user} />
                   </TabsContent>
                 </TabTransition>

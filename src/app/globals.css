@@ -114,6 +114,29 @@
   body {
     overflow: auto; /* Keep scrolling enabled */
   }
+
+  /* Tab spacing fixes */
+  .tabs-content {
+    margin-top: 2rem !important; /* 32px - more space for mobile */
+  }
+
+  /* Ensure tabs don't overlap with content */
+  [role="tablist"] {
+    position: relative;
+    z-index: 10;
+  }
+
+  [role="tabpanel"] {
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Mobile-specific spacing */
+  @media (max-width: 768px) {
+    .tabs-content {
+      margin-top: 2.5rem !important; /* 40px - even more space for mobile */
+    }
+  }
   
   /* Mobile-specific improvements */
   @media (max-width: 640px) {
