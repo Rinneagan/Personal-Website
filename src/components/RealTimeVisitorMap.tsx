@@ -381,83 +381,19 @@ export function VisitorMap({ className = '' }: VisitorMapProps) {
             </div>
 
             {/* Time Range Selector */}
-            <div className="space-y-4 mb-6">
-              <div className="flex items-center gap-4">
-                <span className="text-sm font-medium">Time Range:</span>
-                <div className="flex gap-2">
-                  {(['1h', '24h', '7d', '30d'] as const).map(range => (
-                    <Button
-                      key={range}
-                      variant={selectedTimeRange === range ? 'default' : 'outline'}
-                      size="sm"
-                      onClick={() => setSelectedTimeRange(range)}
-                    >
-                      {range}
-                    </Button>
-                  ))}
-                </div>
-              </div>
+            <div className="flex items-center gap-4 mb-6">
+              <span className="text-sm font-medium">Time Range:</span>
               <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={async () => {
-                    // Track new visitor with real location data
-                    const location = await getVisitorLocation();
-                    const newVisitor = {
-                      location,
-                      timestamp: new Date().toISOString(),
-                      page: window.location.pathname,
-                      duration: 0,
-                      sessionId: `session-${Date.now()}`,
-                      isNew: true
-                    };
-                    
-                    trackVisitor(newVisitor);
-                    trackPageView(window.location.pathname);
-                  }}
-                >
-                  <RefreshCw className="w-4 h-4 mr-1" />
-                  Track Your Visit
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={async () => {
-                    // Add visitors from random real-world locations for demo
-                    const demoLocations = [
-                      { city: 'Tokyo', country: 'Japan', lat: 35.6762, lng: 139.6503 },
-                      { city: 'London', country: 'United Kingdom', lat: 51.5074, lng: -0.1278 },
-                      { city: 'Paris', country: 'France', lat: 48.8566, lng: 2.3522 },
-                      { city: 'Sydney', country: 'Australia', lat: -33.8688, lng: 151.2093 },
-                      { city: 'Dubai', country: 'UAE', lat: 25.2048, lng: 55.2708 },
-                      { city: 'Singapore', country: 'Singapore', lat: 1.3521, lng: 103.8198 },
-                      { city: 'Mumbai', country: 'India', lat: 19.0760, lng: 72.8777 },
-                      { city: 'São Paulo', country: 'Brazil', lat: -23.5505, lng: -46.6333 }
-                    ];
-                    
-                    const randomLocation = demoLocations[Math.floor(Math.random() * demoLocations.length)];
-                    const newVisitor = {
-                      location: {
-                        city: randomLocation.city,
-                        country: randomLocation.country,
-                        coordinates: { lat: randomLocation.lat, lng: randomLocation.lng },
-                        region: 'Demo'
-                      },
-                      timestamp: new Date().toISOString(),
-                      page: window.location.pathname,
-                      duration: Math.random() * 300, // Random session duration
-                      sessionId: `demo-session-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-                      isNew: true
-                    };
-                    
-                    trackVisitor(newVisitor);
-                    trackPageView(window.location.pathname);
-                  }}
-                >
-                  <Users className="w-4 h-4 mr-1" />
-                  Add Random Visitor
-                </Button>
+                {(['1h', '24h', '7d', '30d'] as const).map(range => (
+                  <Button
+                    key={range}
+                    variant={selectedTimeRange === range ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setSelectedTimeRange(range)}
+                  >
+                    {range}
+                  </Button>
+                ))}
               </div>
             </div>
 
