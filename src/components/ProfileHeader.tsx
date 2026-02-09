@@ -22,7 +22,7 @@ export function ProfileHeader({ user }: ProfileHeaderProps) {
       
       <div className="flex-1 text-center md:text-left">
         <div className="flex flex-col md:flex-row md:items-center gap-3 mb-4">
-          <h1 className="text-3xl font-bold">
+          <h1 className="text-2xl sm:text-3xl font-bold break-words">
             {user.name || user.login}
           </h1>
           <Badge variant="secondary" className="w-fit">

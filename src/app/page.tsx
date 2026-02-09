@@ -169,7 +169,7 @@ export default function Home() {
 
             <div className="mt-8">
               <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <TabsList className="grid w-full grid-cols-5 md:grid-cols-5 lg:grid-cols-5">
+                <TabsList className="grid w-full grid-cols-3 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-5 gap-1 sm:gap-2">
                   <TabsTrigger value="about" className="flex items-center gap-2">
                     <User className="w-4 h-4" />
                     About
@@ -258,7 +258,7 @@ export default function Home() {
                           <p className="text-muted-foreground">No repositories found matching your criteria.</p>
                         </div>
                       ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                           {filteredRepos.map((repo) => (
                             <ProjectCard 
                               key={repo.id} 
