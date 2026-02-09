@@ -487,7 +487,7 @@ export function CollaborationHub({
         </div>
 
         {/* Fixed height container to prevent layout shifts */}
-        <div className="min-h-[400px]">
+        <div className="h-[400px] overflow-y-auto">
           {isLoading ? (
             <div className="flex items-center justify-center h-96">
               <div className="text-center">
@@ -521,7 +521,7 @@ export function CollaborationHub({
               onClick={() => setSelectedCollaborator(null)}
             >
               <motion.div
-                className="bg-background rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+                className="bg-background rounded-lg max-w-2xl w-full max-h-[80vh] overflow-y-auto"
                 onClick={(e) => e.stopPropagation()}
               >
                 <div className="p-6">
