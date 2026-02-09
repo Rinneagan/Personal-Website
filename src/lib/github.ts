@@ -25,6 +25,7 @@ export interface GitHubUser {
   public_repos: number;
   followers: number;
   following: number;
+  type?: string;
 }
 
 const GITHUB_API_BASE = 'https://api.github.com';
