@@ -401,7 +401,7 @@ export function VisitorMap({ className = '' }: VisitorMapProps) {
             <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
               {/* Main Map */}
               <div className="xl:col-span-2">
-                <div className="bg-muted/30 rounded-lg p-4 h-[500px] sm:h-[600px] relative overflow-hidden tools-map-container">
+                <div className="bg-muted/30 rounded-lg p-4 h-[250px] sm:h-[450px] relative overflow-hidden tools-map-container">
                   <div className="absolute inset-0">
                     {/* World Map Background */}
                     <div className="relative w-full h-full bg-gradient-to-br from-blue-50 via-green-50 to-yellow-50 dark:from-blue-950 dark:via-green-950 dark:to-yellow-950">
