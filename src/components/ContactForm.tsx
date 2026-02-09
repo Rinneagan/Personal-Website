@@ -40,44 +40,30 @@ export function ContactForm({ user }: ContactFormProps) {
     setIsSubmitting(true);
     setSubmitStatus('idle');
     setErrorMessage('');
-
+    
     try {
-      // Initialize EmailJS with your public key
-      // You'll need to sign up at EmailJS.com and get these values
-      const PUBLIC_KEY = 'your_emailjs_public_key';
-      const SERVICE_ID = 'your_emailjs_service_id';
-      const TEMPLATE_ID = 'your_emailjs_template_id';
-
-      // For demo purposes, we'll simulate sending
-      // In production, replace with actual EmailJS integration:
-      /*
-      emailjs.init(PUBLIC_KEY);
+      // Send to real API endpoint
+      const response = await fetch('/api/contact', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
       
-      const templateParams = {
-        from_name: formData.name,
-        from_email: formData.email,
-        subject: formData.subject,
-        message: formData.message,
-        to_name: user?.name || 'Portfolio Owner',
-        to_email: user?.email || 'your-email@example.com'
-      };
-
-      await emailjs.send(SERVICE_ID, TEMPLATE_ID, templateParams);
-      */
-
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
-
-      // Simulate success (90% success rate for demo)
-      if (Math.random() > 0.1) {
+      const result = await response.json();
+      
+      if (result.success) {
         setSubmitStatus('success');
         setFormData({ name: '', email: '', subject: '', message: '' });
+        console.log('Message sent successfully:', result.messageId);
       } else {
-        throw new Error('Failed to send message. Please try again.');
+        throw new Error(result.error || 'Failed to send message');
       }
     } catch (error) {
       setSubmitStatus('error');
       setErrorMessage(error instanceof Error ? error.message : 'An unexpected error occurred');
+      console.error('Contact form submission error:', error);
     } finally {
       setIsSubmitting(false);
     }
