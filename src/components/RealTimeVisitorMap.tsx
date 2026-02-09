@@ -47,14 +47,32 @@ export function useRealTimeVisitors() {
   const [totalVisitors, setTotalVisitors] = useState(0);
   const [pageViews, setPageViews] = useState(0);
   const [avgSessionDuration, setAvgSessionDuration] = useState(0);
+  const [bounceRate, setBounceRate] = useState(0);
   const [topPages, setTopPages] = useState<Array<{page: string, count: number}>>([]);
   const [topCountries, setTopCountries] = useState<Array<{country: string, count: number}>>([]);
   const sessionIdRef = useRef<string>('');
   const startTimeRef = useRef<number>(Date.now());
+  const pageViewsRef = useRef<Set<string>>(new Set());
+  const bouncedSessionsRef = useRef<Set<string>>(new Set());
 
   // Track page view
   const trackPageView = (page: string) => {
+    const sessionId = sessionIdRef.current;
+    
+    // Track page view for this session
+    pageViewsRef.current.add(page);
     setPageViews(prev => prev + 1);
+    
+    // Check if this is a bounce (single page view session)
+    if (sessionId && pageViewsRef.current.size === 1) {
+      // Set a timeout to detect if user leaves after single page view
+      setTimeout(() => {
+        if (pageViewsRef.current.size === 1) {
+          bouncedSessionsRef.current.add(sessionId);
+          updateBounceRate();
+        }
+      }, 30000); // 30 seconds to detect bounce
+    }
     
     setTopPages(prev => {
       const newPages = [...prev];
@@ -68,6 +86,14 @@ export function useRealTimeVisitors() {
       
       return newPages.sort((a, b) => b.count - a.count).slice(0, 5);
     });
+  };
+
+  // Update bounce rate calculation
+  const updateBounceRate = () => {
+    const totalSessions = Math.max(1, totalVisitors);
+    const bouncedCount = bouncedSessionsRef.current.size;
+    const rate = Math.round((bouncedCount / totalSessions) * 100);
+    setBounceRate(rate);
   };
 
   // Track visitor session
@@ -277,12 +303,13 @@ export function useRealTimeVisitors() {
     totalVisitors,
     pageViews,
     avgSessionDuration,
+    bounceRate,
     topPages,
     topCountries: getUniqueCountries(),
-    recentVisitors: getRecentVisitors(),
     trackPageView,
     trackVisitor,
-    getVisitorLocation
+    getVisitorLocation,
+    getRecentVisitors
   };
 }
 
@@ -293,13 +320,16 @@ export function VisitorMap({ className = '' }: VisitorMapProps) {
     totalVisitors,
     pageViews,
     avgSessionDuration,
+    bounceRate,
     topPages,
     topCountries,
-    recentVisitors,
+    getRecentVisitors,
     trackPageView,
     trackVisitor,
     getVisitorLocation
   } = useRealTimeVisitors();
+
+  const recentVisitors = getRecentVisitors();
 
   const [selectedTimeRange, setSelectedTimeRange] = useState<'1h' | '24h' | '7d' | '30d'>('24h');
   const [selectedVisitor, setSelectedVisitor] = useState<RealVisitor | null>(null);
@@ -536,7 +566,7 @@ export function VisitorMap({ className = '' }: VisitorMapProps) {
                     Recent Activity ({recentVisitors.length})
                   </h4>
                   <div className="space-y-2 max-h-40 overflow-y-auto tools-overflow-scroll">
-                    {recentVisitors.slice(0, 5).map((visitor) => (
+                    {recentVisitors.slice(0, 5).map((visitor: RealVisitor) => (
                       <div 
                         key={visitor.id} 
                         className="text-xs p-2 rounded border cursor-pointer hover:bg-muted/50 transition-colors"

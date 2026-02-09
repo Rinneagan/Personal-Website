@@ -32,11 +32,9 @@ export function MyTools({ className = '' }: MyToolsProps) {
     totalVisitors,
     activeVisitors,
     avgSessionDuration,
-    pageViews
+    pageViews,
+    bounceRate
   } = useRealTimeVisitors();
-
-  // Calculate bounce rate (mock calculation for now - would need more tracking)
-  const bounceRate = totalVisitors > 0 ? Math.max(5, Math.min(40, (pageViews / totalVisitors) * 10)) : 0;
 
   return (
     <div className={`space-y-6 ${className}`}>
