@@ -10,6 +10,8 @@ import { ExternalLink, Github, Calendar, GitFork, Star, Users, MessageCircle, Co
 import { TechStackIcons } from '@/components/TechStackIcons';
 import { CommentsSystem } from '@/components/CommentsSystem';
 import { ProjectDNA } from '@/components/ProjectDNA';
+import { useEffect, useState } from 'react';
+import { updateUrlState, initializeFromUrl, saveScrollPosition } from '@/lib/urlState';
 
 interface ProjectModalProps {
   repo: GitHubRepo;
@@ -18,6 +20,56 @@ interface ProjectModalProps {
 }
 
 export function ProjectModal({ repo, isOpen, onClose }: ProjectModalProps) {
+  const [activeTab, setActiveTab] = useState('overview');
+
+  // Initialize from URL and handle URL updates
+  useEffect(() => {
+    const urlState = initializeFromUrl();
+    
+    // Set active tab from URL if modal matches
+    if (urlState.modal === repo.name) {
+      if (urlState.tab) {
+        setActiveTab(urlState.tab);
+      } else {
+        setActiveTab('overview');
+      }
+    } else {
+      // URL doesn't match any repo, ensure modal is closed
+      if (isOpen) {
+        onClose();
+      }
+    }
+  }, [repo.name, isOpen]);
+
+  // Update URL when tab changes
+  useEffect(() => {
+    if (isOpen) {
+      updateUrlState({ 
+        modal: repo.name,
+        tab: activeTab 
+      });
+    }
+  }, [isOpen, activeTab, repo.name]);
+
+  // Save scroll position before modal opens
+  useEffect(() => {
+    if (isOpen) {
+      saveScrollPosition();
+    }
+  }, [isOpen]);
+
+  // Clear modal from URL when closed
+  useEffect(() => {
+    if (!isOpen) {
+      const currentState = initializeFromUrl();
+      updateUrlState({ 
+        modal: undefined,
+        projectId: undefined,
+        tab: undefined,
+        section: currentState.section // Preserve the current section
+      });
+    }
+  }, [isOpen]);
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
@@ -26,11 +78,10 @@ export function ProjectModal({ repo, isOpen, onClose }: ProjectModalProps) {
     });
   };
 
-  // Generate a placeholder screenshot URL based on the repo
+  // Generate real repository preview image URL
   const getScreenshotUrl = () => {
-    // In a real implementation, you'd have actual screenshots
-    // For now, we'll use a placeholder service
-    return `https://via.placeholder.com/800x400/1e293b/ffffff?text=${encodeURIComponent(repo.name)}`;
+    // Use GitHub's social preview image for the repository
+    return `https://opengraph.githubassets.com/1/Rinneagan/${repo.name}`;
   };
 
   return (
@@ -44,7 +95,7 @@ export function ProjectModal({ repo, isOpen, onClose }: ProjectModalProps) {
           </DialogTitle>
         </DialogHeader>
         
-        <Tabs defaultValue="overview" className="w-full">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="overview" className="flex items-center gap-2">
               <Code className="w-4 h-4" />
@@ -65,6 +116,19 @@ export function ProjectModal({ repo, isOpen, onClose }: ProjectModalProps) {
           </TabsList>
 
           <TabsContent value="overview" className="space-y-6 mt-6">
+            {/* Repository Preview Image */}
+            <div className="w-full">
+              <img 
+                src={getScreenshotUrl()} 
+                alt={`${repo.name} repository preview`}
+                className="w-full h-auto rounded-lg border"
+                onError={(e) => {
+                  // Fallback to a simple placeholder if GitHub preview fails
+                  (e.target as HTMLImageElement).src = `https://via.placeholder.com/800x400/1e293b/ffffff?text=${encodeURIComponent(repo.name)}`;
+                }}
+              />
+            </div>
+
             <div className="flex flex-col md:flex-row gap-6">
               <div className="flex-1">
                 <h3 className="text-lg font-semibold mb-3">About</h3>

@@ -18,6 +18,7 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { GitHubUser, GitHubRepo, getUserInfo, getUserRepos, testGitHubAPI } from '@/lib/github';
 import { Search, Code, Clock, Award, Mail, User, Settings } from 'lucide-react';
+import { initializeFromUrl, updateUrlState } from '@/lib/urlState';
 
 export default function Home() {
   const [user, setUser] = useState<GitHubUser | null>(null);
@@ -30,7 +31,15 @@ export default function Home() {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const username = 'Rinneagan'; // Replace with your GitHub username
-  const [activeTab, setActiveTab] = useState('projects');
+  // Initialize activeTab from URL state or default to 'about'
+  const getInitialTab = () => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      return params.get('section') || 'about';
+    }
+    return 'about';
+  };
+  const [activeTab, setActiveTab] = useState(getInitialTab());
   const tabs = [
     { id: 'projects', label: 'Projects', icon: Code },
     { id: 'timeline', label: 'Timeline', icon: Clock },
@@ -40,6 +49,41 @@ export default function Home() {
     { id: 'contact', label: 'Contact', icon: Mail }
   ];
   const dataLoadedRef = useRef(false);
+
+  // Initialize from URL on component mount
+  useEffect(() => {
+    // Only run on client side
+    if (typeof window === 'undefined') return;
+    
+    const params = new URLSearchParams(window.location.search);
+    const sectionFromUrl = params.get('section');
+    
+    if (sectionFromUrl && sectionFromUrl !== activeTab) {
+      console.log('Setting active tab from URL:', sectionFromUrl);
+      setActiveTab(sectionFromUrl);
+    }
+  }, []); // Only run once on mount
+
+  // Handle modal opening from URL after repos are loaded
+  useEffect(() => {
+    if (repos.length === 0) return;
+    
+    const urlState = initializeFromUrl();
+    
+    // Open modal if project is specified in URL
+    if (urlState.projectId && urlState.modal) {
+      const repo = repos.find(r => r.name === urlState.modal);
+      if (repo) {
+        setSelectedRepo(repo);
+        setIsModalOpen(true);
+      }
+    }
+  }, [repos]);
+
+  // Update URL when tab changes
+  useEffect(() => {
+    updateUrlState({ section: activeTab });
+  }, [activeTab]);
 
   useEffect(() => {
     async function fetchData() {

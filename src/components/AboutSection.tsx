@@ -143,6 +143,10 @@ export function AboutSection({ user }: AboutSectionProps) {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
+        transition={{ 
+          duration: 0.6,
+          ease: "easeOut"
+        }}
         className="text-center mb-12"
       >
         <h2 className="text-4xl font-bold mb-4">About Me</h2>
@@ -157,7 +161,10 @@ export function AboutSection({ user }: AboutSectionProps) {
         <motion.div
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.2 }}
+          transition={{ 
+            duration: 0.6,
+            ease: "easeOut"
+          }}
         >
           <Card>
             <CardHeader>
