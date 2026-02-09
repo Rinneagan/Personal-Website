@@ -15,7 +15,6 @@ import { SearchAutocomplete, SearchSuggestions } from '@/components/SearchAutoco
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { ThemeToggle } from '@/components/ThemeToggle';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { GitHubUser, GitHubRepo, getUserInfo, getUserRepos, testGitHubAPI } from '@/lib/github';
 import { Search, Code, Clock, Award, Mail, User, Settings } from 'lucide-react';
@@ -159,10 +158,6 @@ export default function Home() {
       <PageTransition>
         <div className="min-h-screen bg-background">
           <div className="container mx-auto px-4 py-8 max-w-6xl">
-            <div className="flex justify-end mb-4">
-              <ThemeToggle />
-            </div>
-            
             <SectionTransition animation="slideUp">
               {user && <ProfileHeader user={user} />}
             </SectionTransition>
