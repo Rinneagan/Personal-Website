@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Mail, Send, Github, Linkedin, Twitter, CheckCircle, AlertCircle } from 'lucide-react';
+import { Mail, Send, Github, Linkedin, MessageCircle, CheckCircle, AlertCircle } from 'lucide-react';
 import emailjs from '@emailjs/browser';
 
 interface ContactFormProps {
@@ -185,14 +185,6 @@ export function ContactForm({ user }: ContactFormProps) {
                   )}
                 </Button>
               </form>
-
-              {/* EmailJS Setup Notice */}
-              <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                <p className="text-xs text-blue-800 dark:text-blue-200">
-                  <strong>Note:</strong> This is a demo form. To enable actual email functionality, 
-                  sign up for EmailJS and update the credentials in the component.
-                </p>
-              </div>
             </CardContent>
           </Card>
         </motion.div>
@@ -263,13 +255,13 @@ export function ContactForm({ user }: ContactFormProps) {
                 
                 <Button variant="outline" size="sm" asChild>
                   <a
-                    href="https://twitter.com/yourhandle"
+                    href="https://wa.me/233591987691"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center gap-2"
                   >
-                    <Twitter className="w-4 h-4" />
-                    Twitter
+                    <MessageCircle className="w-4 h-4" />
+                    WhatsApp
                   </a>
                 </Button>
               </div>
