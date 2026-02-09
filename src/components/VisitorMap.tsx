@@ -260,9 +260,11 @@ export function VisitorMap({ className = '' }: VisitorMapProps) {
                 variant="outline"
                 size="sm"
                 onClick={() => {
-                  setVisitors(generateVisitorData());
+                  const newVisitors = generateVisitorData();
+                  setVisitors(prev => [...prev, ...newVisitors].slice(-50)); // Keep only last 50 visitors
                   setTotalVisitors(prev => prev + Math.floor(Math.random() * 10) + 5);
                 }}
+                className="whitespace-nowrap"
               >
                 <RefreshCw className="w-4 h-4 mr-1" />
                 Refresh
@@ -273,7 +275,7 @@ export function VisitorMap({ className = '' }: VisitorMapProps) {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               {/* Interactive Map */}
               <div className="lg:col-span-2">
-                <div className="bg-muted/30 rounded-lg p-4 h-96 relative overflow-hidden">
+                <div className="bg-muted/30 rounded-lg p-4 h-96 relative overflow-hidden border">
                   <div className="absolute inset-0">
                     {/* Simulated world map with visitor dots */}
                     <div className="relative w-full h-full bg-gradient-to-br from-blue-50 to-green-50 dark:from-blue-950 dark:to-green-950">
@@ -297,13 +299,17 @@ export function VisitorMap({ className = '' }: VisitorMapProps) {
                         const y = ((90 - visitor.location.coordinates.lat) / 180) * 100; // Convert to 0-100 percentage
                         const size = Math.random() * 8 + 4; // 4-12px size
                         
+                        // Ensure dots stay within map boundaries (with padding)
+                        const clampedX = Math.max(5, Math.min(95, x));
+                        const clampedY = Math.max(5, Math.min(95, y));
+                        
                         return (
                           <div
                             key={visitor.id}
                             className="absolute w-2 h-2 bg-red-500 rounded-full animate-pulse shadow-lg cursor-pointer hover:scale-150 transition-transform"
                             style={{
-                              left: `${x}%`,
-                              top: `${y}%`,
+                              left: `${clampedX}%`,
+                              top: `${clampedY}%`,
                               width: `${size}px`,
                               height: `${size}px`,
                               animationDelay: `${index * 0.1}s`
