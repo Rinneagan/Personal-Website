@@ -91,6 +91,29 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
+
+  /* Hide scrollbars globally */
+  * {
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* Internet Explorer 10+ */
+  }
+
+  *::-webkit-scrollbar {
+    display: none; /* Safari, Chrome, Opera */
+    width: 0;
+    height: 0;
+    background: transparent;
+  }
+
+  /* Keep scrolling functionality but hide scrollbar */
+  html {
+    overflow: -moz-scrollbars-none; /* Firefox */
+    -ms-overflow-style: none; /* IE */
+  }
+
+  body {
+    overflow: auto; /* Keep scrolling enabled */
+  }
   
   /* Mobile-specific improvements */
   @media (max-width: 640px) {
