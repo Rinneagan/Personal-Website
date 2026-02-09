@@ -208,36 +208,30 @@ export default function Home() {
 
             <div className="mt-8">
               <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <TabsList className="flex flex-wrap w-full gap-1 sm:gap-2">
-                  <TabsTrigger value="about" className="flex items-center gap-2 flex-1 min-w-fit">
+                <TabsList className="grid w-full grid-cols-3 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-5 gap-1 sm:gap-2">
+                  <TabsTrigger value="about" className="flex items-center gap-2">
                     <User className="w-4 h-4" />
-                    <span className="hidden sm:inline">About</span>
-                    <span className="sm:hidden">A</span>
+                    About
                   </TabsTrigger>
-                  <TabsTrigger value="projects" className="flex items-center gap-2 flex-1 min-w-fit">
+                  <TabsTrigger value="projects" className="flex items-center gap-2">
                     <Code className="w-4 h-4" />
-                    <span className="hidden sm:inline">Projects</span>
-                    <span className="sm:hidden">P</span>
+                    Projects
                   </TabsTrigger>
-                  <TabsTrigger value="timeline" className="flex items-center gap-2 flex-1 min-w-fit">
+                  <TabsTrigger value="timeline" className="flex items-center gap-2">
                     <Clock className="w-4 h-4" />
-                    <span className="hidden sm:inline">Timeline</span>
-                    <span className="sm:hidden">T</span>
+                    Timeline
                   </TabsTrigger>
-                  <TabsTrigger value="skills" className="flex items-center gap-2 flex-1 min-w-fit">
+                  <TabsTrigger value="skills" className="flex items-center gap-2">
                     <Award className="w-4 h-4" />
-                    <span className="hidden sm:inline">Skills</span>
-                    <span className="sm:hidden">S</span>
+                    Skills
                   </TabsTrigger>
-                  <TabsTrigger value="tools" className="flex items-center gap-2 flex-1 min-w-fit">
+                  <TabsTrigger value="tools" className="flex items-center gap-2">
                     <Settings className="w-4 h-4" />
-                    <span className="hidden sm:inline">Tools</span>
-                    <span className="sm:hidden">T</span>
+                    My Tools
                   </TabsTrigger>
-                  <TabsTrigger value="contact" className="flex items-center gap-2 flex-1 min-w-fit">
+                  <TabsTrigger value="contact" className="flex items-center gap-2">
                     <Mail className="w-4 h-4" />
-                    <span className="hidden sm:inline">Contact</span>
-                    <span className="sm:hidden">C</span>
+                    Contact
                   </TabsTrigger>
                 </TabsList>
 
@@ -304,14 +298,14 @@ export default function Home() {
                         </div>
                       ) : (
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-                        {filteredRepos.map((repo) => (
-                          <ProjectCard 
-                            key={repo.id} 
-                            repo={repo} 
-                            onViewDetails={handleViewDetails}
-                          />
-                        ))}
-                      </div>
+                          {filteredRepos.map((repo) => (
+                            <ProjectCard 
+                              key={repo.id} 
+                              repo={repo} 
+                              onViewDetails={handleViewDetails}
+                            />
+                          ))}
+                        </div>
                       )}
                     </SectionTransition>
                   </TabsContent>
