@@ -257,7 +257,7 @@ export function CollaborationHub({
 
     if (searchTerm) {
       filtered = filtered.filter(collaborator =>
-        collaborator.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (collaborator.name && collaborator.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
         collaborator.login.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (collaborator.bio && collaborator.bio.toLowerCase().includes(searchTerm.toLowerCase())) ||
         collaborator.skills.some(skill => skill.toLowerCase().includes(searchTerm.toLowerCase()))
