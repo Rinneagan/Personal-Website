@@ -26,6 +26,7 @@ export interface GitHubUser {
   followers: number;
   following: number;
   type?: string;
+  company?: string | null;
 }
 
 const GITHUB_API_BASE = 'https://api.github.com';
