@@ -25,8 +25,11 @@ class RealTimeVisitorManager {
   private maxReconnectAttempts = 5;
 
   constructor() {
-    this.initializeWebSocket();
-    this.setupHeartbeat();
+    // Only initialize on client side
+    if (typeof window !== 'undefined') {
+      this.initializeWebSocket();
+      this.setupHeartbeat();
+    }
   }
 
   private initializeWebSocket() {
@@ -63,6 +66,11 @@ class RealTimeVisitorManager {
   }
 
   private simulateRealTimeData() {
+    // Only run simulation on client side
+    if (typeof window === 'undefined') {
+      return;
+    }
+
     // Simulate real-time visitor data from multiple sources
     const generateRealisticVisitor = (): VisitorData => {
       const cities = [
@@ -91,10 +99,10 @@ class RealTimeVisitorManager {
           region: randomLocation.region
         },
         timestamp: new Date().toISOString(),
-        page: window.location.pathname,
+        page: typeof window !== 'undefined' ? window.location.pathname : '/',
         duration: Math.random() * 600, // 0-10 minutes
-        referrer: document.referrer || 'direct',
-        userAgent: navigator.userAgent,
+        referrer: typeof document !== 'undefined' ? document.referrer : 'direct',
+        userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'Mozilla/5.0',
         isActive: true,
         isNew: Math.random() > 0.7
       };
@@ -220,6 +228,11 @@ class RealTimeVisitorManager {
   }
 
   public addVisitor(visitorData: Partial<VisitorData>) {
+    // Only add visitor on client side
+    if (typeof window === 'undefined') {
+      return;
+    }
+
     const sessionId = `real-session-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     const visitor: VisitorData = {
       id: `real-visitor-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
@@ -231,10 +244,10 @@ class RealTimeVisitorManager {
         region: 'Unknown'
       },
       timestamp: new Date().toISOString(),
-      page: visitorData.page || window.location.pathname,
+      page: visitorData.page || (typeof window !== 'undefined' ? window.location.pathname : '/'),
       duration: visitorData.duration || 0,
-      referrer: visitorData.referrer || document.referrer,
-      userAgent: visitorData.userAgent || navigator.userAgent,
+      referrer: visitorData.referrer || (typeof document !== 'undefined' ? document.referrer : 'direct'),
+      userAgent: visitorData.userAgent || (typeof navigator !== 'undefined' ? navigator.userAgent : 'Mozilla/5.0'),
       isActive: true,
       isNew: true
     };
