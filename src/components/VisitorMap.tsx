@@ -242,33 +242,35 @@ export function VisitorMap({ className = '' }: VisitorMapProps) {
             </div>
 
             {/* Time Range Selector */}
-            <div className="flex items-center gap-2 mb-6">
-              <span className="text-sm font-medium">Time Range:</span>
-              <div className="flex gap-2">
-                {(['1h', '24h', '7d', '30d'] as const).map(range => (
-                  <Button
-                    key={range}
-                    variant={selectedTimeRange === range ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setSelectedTimeRange(range)}
-                  >
-                    {range}
-                  </Button>
-                ))}
+            <div className="mb-6">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                <span className="text-sm font-medium">Time Range:</span>
+                <div className="flex flex-wrap gap-2">
+                  {(['1h', '24h', '7d', '30d'] as const).map(range => (
+                    <Button
+                      key={range}
+                      variant={selectedTimeRange === range ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setSelectedTimeRange(range)}
+                    >
+                      {range}
+                    </Button>
+                  ))}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const newVisitors = generateVisitorData();
+                    setVisitors(prev => [...prev, ...newVisitors].slice(-50)); // Keep only last 50 visitors
+                    setTotalVisitors(prev => prev + Math.floor(Math.random() * 10) + 5);
+                  }}
+                  className="whitespace-nowrap"
+                >
+                  <RefreshCw className="w-4 h-4 mr-1" />
+                  Track
+                </Button>
               </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  const newVisitors = generateVisitorData();
-                  setVisitors(prev => [...prev, ...newVisitors].slice(-50)); // Keep only last 50 visitors
-                  setTotalVisitors(prev => prev + Math.floor(Math.random() * 10) + 5);
-                }}
-                className="whitespace-nowrap"
-              >
-                <RefreshCw className="w-4 h-4 mr-1" />
-                Refresh
-              </Button>
             </div>
 
             {/* Map Container */}

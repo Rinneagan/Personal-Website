@@ -39,7 +39,7 @@ export function MyTools({ className = '' }: MyToolsProps) {
   const bounceRate = totalVisitors > 0 ? Math.max(5, Math.min(40, (pageViews / totalVisitors) * 10)) : 0;
 
   return (
-    <div className={`space-y-6 ${className} max-h-screen overflow-y-auto`}>
+    <div className={`space-y-6 ${className}`}>
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -50,14 +50,14 @@ export function MyTools({ className = '' }: MyToolsProps) {
             Analytics and deployment utilities for your portfolio
           </CardDescription>
         </CardHeader>
-        <CardContent className="max-h-[70vh] overflow-y-auto">
+        <CardContent>
           <div className="space-y-4">
             {/* Tab Navigation */}
-            <div className="flex space-x-2 mb-6">
+            <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 mb-6">
               <Button
                 variant={activeTab === 'visitor-map' ? 'default' : 'outline'}
                 onClick={() => setActiveTab('visitor-map')}
-                className="flex items-center gap-2"
+                className="flex items-center gap-2 w-full sm:w-auto"
               >
                 <Map className="w-4 h-4" />
                 Visitor Map
@@ -65,7 +65,7 @@ export function MyTools({ className = '' }: MyToolsProps) {
               <Button
                 variant={activeTab === 'deployment' ? 'default' : 'outline'}
                 onClick={() => setActiveTab('deployment')}
-                className="flex items-center gap-2"
+                className="flex items-center gap-2 w-full sm:w-auto"
               >
                 <Rocket className="w-4 h-4" />
                 Deployment
@@ -74,13 +74,9 @@ export function MyTools({ className = '' }: MyToolsProps) {
 
             {/* Tab Content */}
             {activeTab === 'visitor-map' ? (
-              <div className="max-h-[60vh] overflow-y-auto">
-                <VisitorMap />
-              </div>
+              <VisitorMap />
             ) : (
-              <div className="max-h-[60vh] overflow-y-auto">
-                <DeploymentHelper />
-              </div>
+              <DeploymentHelper />
             )}
           </div>
 
