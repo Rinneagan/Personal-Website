@@ -53,7 +53,7 @@ export function MyTools({ className = '' }: MyToolsProps) {
         <CardContent>
           <div className="space-y-4">
             {/* Tab Navigation */}
-            <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 mb-6">
+            <div className="flex flex-col xs:flex-row sm:flex-row space-y-2 xs:space-y-0 sm:space-y-0 xs:space-x-2 sm:space-x-2 mb-6">
               <Button
                 variant={activeTab === 'visitor-map' ? 'default' : 'outline'}
                 onClick={() => setActiveTab('visitor-map')}
@@ -81,7 +81,7 @@ export function MyTools({ className = '' }: MyToolsProps) {
           </div>
 
           {/* Tools Overview */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
             <div className="bg-muted/50 rounded-lg p-4">
               <h4 className="font-semibold mb-3 flex items-center gap-2">
                 <Eye className="w-4 h-4 text-blue-600" />
@@ -158,7 +158,7 @@ export function MyTools({ className = '' }: MyToolsProps) {
           {/* Quick Stats */}
           <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950 dark:to-purple-950 rounded-lg p-6 mt-6">
             <h4 className="font-semibold mb-4 text-center">Quick Stats</h4>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 text-center">
               <div>
                 <div className="text-2xl font-bold text-blue-600">{totalVisitors.toLocaleString()}</div>
                 <div className="text-sm text-muted-foreground">Total Visitors</div>
