@@ -87,36 +87,41 @@ export function ProjectModal({ repo, isOpen, onClose }: ProjectModalProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Github className="w-5 h-5" />
-            {repo.name}
-            <Badge variant="secondary">{repo.language || 'Unknown'}</Badge>
-          </DialogTitle>
+      <DialogContent className="max-w-4xl w-[95vw] max-h-[90vh] overflow-y-auto">
+        <DialogHeader className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-2 min-w-0 flex-1">
+            <Github className="w-5 h-5 flex-shrink-0" />
+            <h2 className="truncate text-lg font-semibold">{repo.name}</h2>
+          </div>
+          <Badge variant="secondary" className="flex-shrink-0">{repo.language || 'Unknown'}</Badge>
         </DialogHeader>
         
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-5">
-            <TabsTrigger value="overview" className="flex items-center gap-2">
+          <TabsList className="flex flex-wrap w-full gap-1">
+            <TabsTrigger value="overview" className="flex items-center gap-2 flex-1 min-w-fit">
               <Code className="w-4 h-4" />
-              Overview
+              <span className="hidden sm:inline">Overview</span>
+              <span className="sm:hidden">O</span>
             </TabsTrigger>
-            <TabsTrigger value="readme" className="flex items-center gap-2">
+            <TabsTrigger value="readme" className="flex items-center gap-2 flex-1 min-w-fit">
               <FileText className="w-4 h-4" />
-              README
+              <span className="hidden sm:inline">README</span>
+              <span className="sm:hidden">R</span>
             </TabsTrigger>
-            <TabsTrigger value="details" className="flex items-center gap-2">
+            <TabsTrigger value="details" className="flex items-center gap-2 flex-1 min-w-fit">
               <Star className="w-4 h-4" />
-              Details
+              <span className="hidden sm:inline">Details</span>
+              <span className="sm:hidden">D</span>
             </TabsTrigger>
-            <TabsTrigger value="dna" className="flex items-center gap-2">
+            <TabsTrigger value="dna" className="flex items-center gap-2 flex-1 min-w-fit">
               <Activity className="w-4 h-4" />
-              DNA
+              <span className="hidden sm:inline">DNA</span>
+              <span className="sm:hidden">N</span>
             </TabsTrigger>
-            <TabsTrigger value="discussion" className="flex items-center gap-2">
+            <TabsTrigger value="discussion" className="flex items-center gap-2 flex-1 min-w-fit">
               <MessageCircle className="w-4 h-4" />
-              Discussion
+              <span className="hidden sm:inline">Discussion</span>
+              <span className="sm:hidden">S</span>
             </TabsTrigger>
           </TabsList>
 
