@@ -39,7 +39,7 @@ export function MyTools({ className = '' }: MyToolsProps) {
   const bounceRate = totalVisitors > 0 ? Math.max(5, Math.min(40, (pageViews / totalVisitors) * 10)) : 0;
 
   return (
-    <div className={`space-y-6 ${className}`}>
+    <div className={`space-y-6 ${className} max-h-screen overflow-y-auto`}>
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -50,7 +50,7 @@ export function MyTools({ className = '' }: MyToolsProps) {
             Analytics and deployment utilities for your portfolio
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="max-h-[70vh] overflow-y-auto">
           <div className="space-y-4">
             {/* Tab Navigation */}
             <div className="flex space-x-2 mb-6">
@@ -74,9 +74,13 @@ export function MyTools({ className = '' }: MyToolsProps) {
 
             {/* Tab Content */}
             {activeTab === 'visitor-map' ? (
-              <VisitorMap />
+              <div className="max-h-[60vh] overflow-y-auto">
+                <VisitorMap />
+              </div>
             ) : (
-              <DeploymentHelper />
+              <div className="max-h-[60vh] overflow-y-auto">
+                <DeploymentHelper />
+              </div>
             )}
           </div>
 
