@@ -101,49 +101,27 @@ export function DeploymentHelper({ className = '' }: DeploymentHelperProps) {
   const [showConfig, setShowConfig] = useState<string | null>(null);
   const [configForm, setConfigForm] = useState<Record<string, any>>({});
 
-  // Load saved configuration from localStorage and environment variables
+  // Load saved configuration from localStorage
   useEffect(() => {
     const savedConfig = localStorage.getItem('deployment-config');
-    let parsed: Record<string, any> = {};
-    
     if (savedConfig) {
       try {
-        parsed = JSON.parse(savedConfig);
+        const parsed = JSON.parse(savedConfig);
+        setConfigForm(parsed);
+        // Update platforms with saved tokens
+        setPlatforms(prev => prev.map(platform => ({
+          ...platform,
+          config: {
+            ...platform.config,
+            apiToken: parsed[`${platform.id}_apiToken`] || '',
+            siteId: parsed[`${platform.id}_siteId`] || '',
+            teamId: parsed[`${platform.id}_teamId`] || ''
+          }
+        })));
       } catch (error) {
         console.error('Failed to load saved config:', error);
       }
     }
-    
-    // Auto-load from environment variables if available
-    if (typeof window !== 'undefined') {
-      // These would be available in production build
-      const vercelToken = process.env.NEXT_PUBLIC_VERCEL_TOKEN || '';
-      const githubToken = process.env.NEXT_PUBLIC_GITHUB_TOKEN || '';
-      
-      if (vercelToken) {
-        parsed['vercel_apiToken'] = vercelToken;
-      }
-      if (githubToken) {
-        parsed['github-pages_apiToken'] = githubToken;
-      }
-    }
-    
-    setConfigForm(parsed);
-    
-    // Update platforms with saved tokens and env vars
-    setPlatforms(prev => prev.map(platform => ({
-      ...platform,
-      config: {
-        ...platform.config,
-        apiToken: parsed[`${platform.id}_apiToken`] || '',
-        siteId: parsed[`${platform.id}_siteId`] || '',
-        teamId: parsed[`${platform.id}_teamId`] || ''
-      },
-      status: parsed[`${platform.id}_apiToken`] || 
-                (platform.id === 'vercel' && process.env.NEXT_PUBLIC_VERCEL_TOKEN) ||
-                (platform.id === 'github-pages' && process.env.NEXT_PUBLIC_GITHUB_TOKEN)
-                ? 'ready' : 'needs-config'
-    })));
   }, []);
 
   const saveConfig = (platformId: string, config: any) => {
@@ -184,29 +162,56 @@ export function DeploymentHelper({ className = '' }: DeploymentHelperProps) {
     addLog(platform.id, 'Starting Vercel deployment...');
     
     try {
-      // Use our API route instead of direct browser call
-      const response = await fetch('/api/deploy/vercel', {
+      // Create deployment
+      const response = await fetch('https://api.vercel.com/v13/deployments', {
         method: 'POST',
         headers: {
+          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          token,
-          projectName: 'personal-website'
+          name: 'personal-website',
+          framework: 'nextjs',
+          buildCommand: platform.buildCommand,
+          outputDirectory: '.next',
+          rootDirectory: '.',
+          gitSource: {
+            type: 'github',
+            repo: 'Rinneagan/personal-website',
+            ref: 'main'
+          }
         })
       });
 
-      const result = await response.json();
-
       if (!response.ok) {
-        throw new Error(result.error || 'Deployment failed');
+        const error = await response.text();
+        throw new Error(`Vercel API error: ${error}`);
       }
 
-      if (result.success) {
-        addLog(platform.id, `✅ Deployment successful: ${result.deploymentUrl}`);
-        return result.deploymentUrl;
+      const deployment = await response.json();
+      addLog(platform.id, `Deployment created: ${deployment.url}`);
+      
+      // Wait for deployment to complete
+      let status = 'BUILDING';
+      while (status === 'BUILDING' || status === 'INITIALIZING') {
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        const statusResponse = await fetch(`https://api.vercel.com/v13/deployments/${deployment.id}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          }
+        });
+        
+        const deploymentStatus = await statusResponse.json();
+        status = deploymentStatus.readyState;
+        addLog(platform.id, `Status: ${status}`);
+      }
+
+      if (status === 'READY') {
+        addLog(platform.id, `✅ Deployment successful: ${deployment.url}`);
+        return deployment.url;
       } else {
-        throw new Error(result.error || 'Deployment failed');
+        throw new Error(`Deployment failed with status: ${status}`);
       }
     } catch (error) {
       addLog(platform.id, `❌ Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -225,30 +230,73 @@ export function DeploymentHelper({ className = '' }: DeploymentHelperProps) {
     addLog(platform.id, 'Starting Netlify deployment...');
     
     try {
-      // Use our API route instead of direct browser call
-      const response = await fetch('/api/deploy/netlify', {
+      // Create or get site
+      let site;
+      if (siteId) {
+        const siteResponse = await fetch(`https://api.netlify.com/api/v1/sites/${siteId}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          }
+        });
+        site = await siteResponse.json();
+      } else {
+        // Create new site
+        const createResponse = await fetch('https://api.netlify.com/api/v1/sites', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            name: 'personal-website'
+          })
+        });
+        site = await createResponse.json();
+        addLog(platform.id, `Created site: ${site.url}`);
+      }
+
+      // Trigger deployment
+      const deployResponse = await fetch(`https://api.netlify.com/api/v1/sites/${site.id}/deploys`, {
         method: 'POST',
         headers: {
+          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          token,
-          siteId,
-          siteName: 'personal-website'
+          dir: '.next',
+          branch: 'main'
         })
       });
 
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || 'Deployment failed');
+      if (!deployResponse.ok) {
+        const error = await deployResponse.text();
+        throw new Error(`Netlify API error: ${error}`);
       }
 
-      if (result.success) {
-        addLog(platform.id, `✅ Deployment successful: ${result.deploymentUrl}`);
-        return result.deploymentUrl;
+      const deploy = await deployResponse.json();
+      addLog(platform.id, `Deployment started: ${deploy.deploy_url}`);
+      
+      // Wait for deployment to complete
+      let status = 'new';
+      while (status === 'new' || status === 'uploading' || status === 'processing') {
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        const statusResponse = await fetch(`https://api.netlify.com/api/v1/deploys/${deploy.id}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          }
+        });
+        
+        const deployStatus = await statusResponse.json();
+        status = deployStatus.state;
+        addLog(platform.id, `Status: ${status}`);
+      }
+
+      if (status === 'ready') {
+        addLog(platform.id, `✅ Deployment successful: ${site.url}`);
+        return site.url;
       } else {
-        throw new Error(result.error || 'Deployment failed');
+        throw new Error(`Deployment failed with status: ${status}`);
       }
     } catch (error) {
       addLog(platform.id, `❌ Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -265,31 +313,48 @@ export function DeploymentHelper({ className = '' }: DeploymentHelperProps) {
     addLog(platform.id, 'Starting GitHub Pages deployment...');
     
     try {
-      // Use our API route instead of direct browser call
-      const response = await fetch('/api/deploy/github', {
+      // Get repository info
+      const repoResponse = await fetch('https://api.github.com/repos/Rinneagan/personal-website', {
+        headers: {
+          'Authorization': `token ${token}`,
+        }
+      });
+
+      if (!repoResponse.ok) {
+        throw new Error('Repository not found or access denied');
+      }
+
+      const repo = await repoResponse.json();
+      addLog(platform.id, `Found repository: ${repo.full_name}`);
+
+      // Create GitHub Pages deployment
+      const pagesResponse = await fetch(`https://api.github.com/repos/${repo.full_name}/pages`, {
         method: 'POST',
         headers: {
+          'Authorization': `token ${token}`,
+          'Accept': 'application/vnd.github.v3+json',
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          token,
-          owner: 'Rinneagan',
-          repo: 'personal-website'
+          source: {
+            type: 'branch',
+            branch: 'gh-pages'
+          }
         })
       });
 
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || 'Deployment failed');
-      }
-
-      if (result.success) {
-        addLog(platform.id, `✅ GitHub Pages ready: ${result.deploymentUrl}`);
-        return result.deploymentUrl;
+      if (pagesResponse.status === 409) {
+        addLog(platform.id, 'GitHub Pages already enabled');
+      } else if (!pagesResponse.ok) {
+        const error = await pagesResponse.text();
+        throw new Error(`GitHub Pages error: ${error}`);
       } else {
-        throw new Error(result.error || 'Deployment failed');
+        addLog(platform.id, 'GitHub Pages enabled');
       }
+
+      const pagesUrl = `https://${repo.owner.login.toLowerCase()}.github.io/${repo.name}`;
+      addLog(platform.id, `✅ GitHub Pages ready: ${pagesUrl}`);
+      return pagesUrl;
     } catch (error) {
       addLog(platform.id, `❌ Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
       throw error;

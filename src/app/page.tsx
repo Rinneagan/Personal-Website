@@ -10,7 +10,7 @@ import { ContactForm } from '@/components/ContactForm';
 import { AboutSection } from '@/components/AboutSection';
 import { MyTools } from '@/components/MyTools';
 import { PageTransition, TabTransition, SectionTransition } from '@/components/PageTransition';
-import { SEOHead, PageSEO } from '@/components/SEOHead';
+import { PageSEO } from '@/components/SEO';
 import { SearchAutocomplete, SearchSuggestions } from '@/components/SearchAutocomplete';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';

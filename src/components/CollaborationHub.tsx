@@ -200,8 +200,9 @@ export function CollaborationHub({
       }
     });
     
-    // Add open source skill for all users as fallback
-    skills.push('Open Source');
+    if (user.type === 'User') {
+      skills.push('Open Source');
+    }
     
     return skills.slice(0, 8);
   };
@@ -256,7 +257,7 @@ export function CollaborationHub({
 
     if (searchTerm) {
       filtered = filtered.filter(collaborator =>
-        (collaborator.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        collaborator.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         collaborator.login.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (collaborator.bio && collaborator.bio.toLowerCase().includes(searchTerm.toLowerCase())) ||
         collaborator.skills.some(skill => skill.toLowerCase().includes(searchTerm.toLowerCase()))
@@ -303,7 +304,7 @@ export function CollaborationHub({
       <div className="flex items-start gap-4">
         <img
           src={collaborator.avatar_url}
-          alt={collaborator.name || collaborator.login}
+          alt={collaborator.name}
           className="w-12 h-12 rounded-full"
         />
         
@@ -527,7 +528,7 @@ export function CollaborationHub({
                   <div className="flex items-start gap-4 mb-6">
                     <img
                       src={selectedCollaborator.avatar_url}
-                      alt={selectedCollaborator.name || selectedCollaborator.login}
+                      alt={selectedCollaborator.name}
                       className="w-16 h-16 rounded-full"
                     />
                     
