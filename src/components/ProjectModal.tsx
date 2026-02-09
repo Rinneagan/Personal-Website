@@ -6,10 +6,11 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { GitHubRepo } from '@/lib/github';
-import { ExternalLink, Github, Calendar, GitFork, Star, Users, MessageCircle, Code, Activity } from 'lucide-react';
+import { ExternalLink, Github, Calendar, GitFork, Star, Users, MessageCircle, Code, Activity, FileText } from 'lucide-react';
 import { TechStackIcons } from '@/components/TechStackIcons';
 import { CommentsSystem } from '@/components/CommentsSystem';
 import { ProjectDNA } from '@/components/ProjectDNA';
+import { ReadmeViewer } from '@/components/ReadmeViewer';
 import { useEffect, useState } from 'react';
 import { updateUrlState, initializeFromUrl, saveScrollPosition } from '@/lib/urlState';
 
@@ -96,10 +97,14 @@ export function ProjectModal({ repo, isOpen, onClose }: ProjectModalProps) {
         </DialogHeader>
         
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="overview" className="flex items-center gap-2">
               <Code className="w-4 h-4" />
               Overview
+            </TabsTrigger>
+            <TabsTrigger value="readme" className="flex items-center gap-2">
+              <FileText className="w-4 h-4" />
+              README
             </TabsTrigger>
             <TabsTrigger value="details" className="flex items-center gap-2">
               <Star className="w-4 h-4" />
@@ -205,6 +210,10 @@ export function ProjectModal({ repo, isOpen, onClose }: ProjectModalProps) {
                 </div>
               </div>
             </div>
+          </TabsContent>
+
+          <TabsContent value="readme" className="mt-6">
+            <ReadmeViewer repo={repo} />
           </TabsContent>
 
           <TabsContent value="details" className="space-y-6 mt-6">
