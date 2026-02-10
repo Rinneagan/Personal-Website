@@ -44,40 +44,47 @@ interface JourneyMilestone {
 }
 
 export function AboutSection({ user }: AboutSectionProps) {
-  // Personal journey milestones - customize these with your actual story
+  // Personal journey milestones - customized for Chemical Engineering to Software Development
   const journeyMilestones: JourneyMilestone[] = [
     {
-      year: '2020',
-      title: 'Started Coding Journey',
-      description: 'Discovered my passion for programming and began learning web development fundamentals.',
+      year: '2019',
+      title: 'Chemical Engineering Studies',
+      description: 'Began my academic journey in Chemical Engineering, developing strong analytical and problem-solving skills.',
       icon: Code,
       type: 'education'
     },
     {
-      year: '2021',
-      title: 'First Open Source Contribution',
-      description: 'Made my first contribution to an open source project and fell in love with collaborative development.',
-      icon: Github,
+      year: '2020',
+      title: 'Discovering Programming',
+      description: 'Found my passion for coding while solving engineering problems through Python and MATLAB.',
+      icon: Lightbulb,
       type: 'achievement'
     },
     {
-      year: '2022',
-      title: 'Advanced Skills Development',
-      description: 'Expanded into full-stack development, mastering React, Node.js, and modern web technologies.',
+      year: '2021',
+      title: 'Bridging Disciplines',
+      description: 'Started applying engineering principles to software development, finding beauty in both code and chemical processes.',
       icon: Zap,
       type: 'education'
     },
     {
+      year: '2022',
+      title: 'First Open Source Contribution',
+      description: 'Contributed to scientific computing projects, combining my engineering background with coding skills.',
+      icon: Github,
+      type: 'achievement'
+    },
+    {
       year: '2023',
-      title: 'Professional Projects',
-      description: 'Started working on real-world projects and building production applications.',
+      title: 'Full-Stack Development',
+      description: 'Expanded into comprehensive web development, mastering modern frameworks and deployment practices.',
       icon: Rocket,
       type: 'career'
     },
     {
       year: '2024',
-      title: 'GitHub Portfolio Launch',
-      description: 'Created a comprehensive portfolio showcasing my projects and technical journey.',
+      title: 'Engineering Meets Poetry',
+      description: 'Launched GitHub portfolio showcasing my unique journey from chemical engineering to creative coding.',
       icon: Award,
       type: 'achievement'
     }
@@ -108,13 +115,16 @@ export function AboutSection({ user }: AboutSectionProps) {
 
   const technicalInterests = [
     'Full-Stack Development',
+    'Scientific Computing',
+    'Computational Chemistry',
     'Open Source',
     'Cloud Architecture',
     'UI/UX Design',
     'Performance Optimization',
     'API Development',
     'Database Design',
-    'DevOps Practices'
+    'DevOps Practices',
+    'Technical Writing'
   ];
 
   const getMilestoneColor = (type: string) => {
@@ -151,8 +161,9 @@ export function AboutSection({ user }: AboutSectionProps) {
       >
         <h2 className="text-4xl font-bold mb-4">About Me</h2>
         <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
-          {user?.bio || "Passionate developer with a love for creating meaningful digital experiences. " +
-          "I believe in the power of code to solve real-world problems and make a positive impact."}
+          {user?.bio || "Chemical Engineering major with a passion for coding and poetry. " +
+          "I bridge the analytical precision of engineering with the creativity of software development, " +
+          "crafting elegant solutions through code while finding beauty in both algorithms and verse."}
         </p>
       </motion.div>
 
@@ -175,34 +186,35 @@ export function AboutSection({ user }: AboutSectionProps) {
             </CardHeader>
             <CardContent className="space-y-4">
               <p className="text-muted-foreground leading-relaxed">
-                I'm a passionate full-stack developer with a journey that began with curiosity and evolved into a career. 
-                My path in technology has been driven by a desire to understand how things work and create solutions 
-                that make a difference.
+                I'm a Chemical Engineering major who discovered coding along the way and completely fell in love with it. 
+                What started as solving engineering problems with Python and MATLAB turned into a passion for creating 
+                beautiful, functional software. There's something amazing about watching code come to life—kind of like 
+                watching a chemical reaction work perfectly.
               </p>
               <p className="text-muted-foreground leading-relaxed">
-                What started as experimenting with HTML and CSS grew into a deep appreciation for the art and 
-                science of software development. I've had the privilege of working on diverse projects, from 
-                personal experiments to collaborative open-source contributions.
+                I love reading and writing poetry too, which I think helps me appreciate both the precision 
+                and creativity needed in good code. Whether I'm debugging a function or crafting a verse, I'm looking for 
+                that elegant solution that just works.
               </p>
               <p className="text-muted-foreground leading-relaxed">
-                Today, I continue to push my boundaries, learning new technologies and sharing my knowledge 
-                with the community. I believe that the best code is not just functional—it's elegant, maintainable, 
-                and built with empathy for the end user.
+                My engineering background gives me a systematic approach to problem-solving, while coding lets me 
+                express my creative side. Together, they create the perfect balance for building innovative 
+                software solutions.
               </p>
               
               {/* Quick Info */}
               <div className="pt-4 space-y-2">
                 <div className="flex items-center gap-2 text-sm">
                   <MapPin className="w-4 h-4 text-muted-foreground" />
-                  <span>Based in [Your Location]</span>
+                  <span>Based in Kumasi, Ghana</span>
                 </div>
                 <div className="flex items-center gap-2 text-sm">
                   <Calendar className="w-4 h-4 text-muted-foreground" />
-                  <span>Active since 2020</span>
+                  <span>Active since 2023</span>
                 </div>
                 <div className="flex items-center gap-2 text-sm">
                   <Mail className="w-4 h-4 text-muted-foreground" />
-                  <span>your-email@example.com</span>
+                  <span>ebenezerkessel99@gmail.com</span>
                 </div>
               </div>
             </CardContent>
