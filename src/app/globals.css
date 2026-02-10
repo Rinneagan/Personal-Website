@@ -117,13 +117,14 @@
 
   /* Tab spacing fixes */
   .tabs-content {
-    margin-top: 2rem !important; /* 32px - more space for mobile */
+    margin-top: 2.5rem !important; /* 40px - more space for mobile */
   }
 
   /* Ensure tabs don't overlap with content */
   [role="tablist"] {
     position: relative;
     z-index: 10;
+    margin-bottom: 1rem; /* Add space below tab list */
   }
 
   [role="tabpanel"] {
@@ -134,7 +135,11 @@
   /* Mobile-specific spacing */
   @media (max-width: 768px) {
     .tabs-content {
-      margin-top: 2.5rem !important; /* 40px - even more space for mobile */
+      margin-top: 3rem !important; /* 48px - even more space for mobile */
+    }
+    
+    [role="tablist"] {
+      margin-bottom: 1.5rem; /* 24px - more space on mobile */
     }
   }
   
