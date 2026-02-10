@@ -185,7 +185,7 @@ export default function Home() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <Code className="w-8 h-8 mx-auto mb-4 animate-pulse" />
-          <p className="text-muted-foreground">Loading portfolio...</p>
+          <p className="text-muted-foreground text-2xl font-bold tracking-wider font-bbh-hegarty">WELCOME</p>
         </div>
       </div>
     );
