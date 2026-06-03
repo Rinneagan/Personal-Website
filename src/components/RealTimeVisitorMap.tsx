@@ -312,7 +312,7 @@ export function VisitorMap({ className = '' }: VisitorMapProps) {
                             key={visitor.id}
                             className={`absolute w-2 h-2 rounded-full cursor-pointer transition-all duration-300 hover:scale-150 ${
                               visitor.isNew ? 'bg-red-500' : 'bg-blue-500'
-                            } ${(visitor as any).isActive ? 'ring-2 ring-white ring-opacity-50' : ''}`}
+                            } ${visitor.isActive ? 'ring-2 ring-white ring-opacity-50' : ''}`}
                             style={{
                               left: `${x}%`,
                               top: `${y}%`,
@@ -325,7 +325,7 @@ export function VisitorMap({ className = '' }: VisitorMapProps) {
                             title={`${visitor.location.city}, ${visitor.location.country} - ${new Date(visitor.timestamp).toLocaleString()}`}
                           >
                             {/* Pulsing effect for active visitors */}
-                            {(visitor as any).isActive && (
+                            {visitor.isActive && (
                               <div className="absolute inset-0 bg-white rounded-full animate-ping opacity-75" />
                             )}
                             
