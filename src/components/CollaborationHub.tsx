@@ -89,12 +89,9 @@ export function CollaborationHub({
     const fetchCollaborators = async () => {
       try {
         console.log('Starting collaborators fetch...');
-        const collaboratorsData: Collaborator[] = [];
         
-        // Fetch data for each collaborative GitHub user with delays to avoid rate limiting
-        for (let i = 0; i < COLLABORATIVE_GITHUB_USERS.length; i++) {
-          const username = COLLABORATIVE_GITHUB_USERS[i];
-          
+        // Fetch data for all collaborative GitHub users in parallel
+        const promises = COLLABORATIVE_GITHUB_USERS.map(async (username) => {
           try {
             const userData = await getUserInfo(username);
             
@@ -124,17 +121,16 @@ export function CollaborationHub({
                 interests
               };
               
-              collaboratorsData.push(collaborator);
-            }
-            
-            // Add delay between API calls to avoid rate limiting
-            if (i < COLLABORATIVE_GITHUB_USERS.length - 1) {
-              await new Promise(resolve => setTimeout(resolve, 1500)); // 1.5s delay
+              return collaborator;
             }
           } catch (error) {
             console.log(`Could not fetch data for ${username}:`, error);
           }
-        }
+          return null;
+        });
+
+        const results = await Promise.all(promises);
+        const collaboratorsData = results.filter((c): c is Collaborator => c !== null);
         
         // Batch update all collaborators at once to prevent blinking
         setCollaborators(collaboratorsData);
