@@ -33,6 +33,7 @@ export function Contact() {
   const [status, setStatus] = useState<Status>('idle');
   const [errorMsg, setErrorMsg] = useState<string>('');
   const [form, setForm] = useState({ name: '', email: '', message: '', website: '' });
+  const [isPhoneHovered, setIsPhoneHovered] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -148,6 +149,250 @@ export function Contact() {
                 value={form.website}
                 onChange={handleChange}
               />
+            </div>
+
+            {/* Vibrating Phone Widget */}
+            <div 
+              style={{ 
+                display: 'flex', 
+                justifyContent: 'center', 
+                alignItems: 'center', 
+                marginBottom: '1rem',
+                position: 'relative',
+                width: '100%',
+              }}
+            >
+              <div
+                onMouseEnter={() => setIsPhoneHovered(true)}
+                onMouseLeave={() => setIsPhoneHovered(false)}
+                style={{
+                  width: '160px',
+                  height: '130px',
+                  position: 'relative',
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  cursor: 'pointer',
+                }}
+              >
+                <svg
+                  width="160"
+                  height="130"
+                  viewBox="0 0 160 130"
+                  style={{ overflow: 'visible' }}
+                >
+                  <circle
+                    cx="80"
+                    cy="65"
+                    r="40"
+                    fill="var(--blue)"
+                    style={{
+                      opacity: isPhoneHovered ? 0.08 : 0.03,
+                      filter: 'blur(12px)',
+                      transition: 'opacity 0.3s',
+                    }}
+                  />
+
+                  {/* Left Sound Waves */}
+                  <motion.path
+                    d="M 32 45 A 25 25 0 0 0 32 85"
+                    fill="none"
+                    stroke="var(--blue)"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    animate={{
+                      scale: isPhoneHovered ? [0.95, 1.25, 0.95] : [0.98, 1.15, 0.98],
+                      opacity: isPhoneHovered ? [0.2, 0.9, 0.2] : [0.3, 0.7, 0.3],
+                    }}
+                    transition={{
+                      repeat: Infinity,
+                      duration: isPhoneHovered ? 0.7 : 1.3,
+                      ease: 'easeInOut',
+                    }}
+                    style={{ originX: '80px', originY: '65px' }}
+                  />
+                  <motion.path
+                    d="M 22 35 A 40 40 0 0 0 22 95"
+                    fill="none"
+                    stroke="var(--blue)"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    animate={{
+                      scale: isPhoneHovered ? [0.95, 1.25, 0.95] : [0.98, 1.15, 0.98],
+                      opacity: isPhoneHovered ? [0.1, 0.7, 0.1] : [0.15, 0.5, 0.15],
+                    }}
+                    transition={{
+                      repeat: Infinity,
+                      duration: isPhoneHovered ? 0.7 : 1.3,
+                      ease: 'easeInOut',
+                      delay: isPhoneHovered ? 0.15 : 0.3,
+                    }}
+                    style={{ originX: '80px', originY: '65px' }}
+                  />
+
+                  {/* Right Sound Waves */}
+                  <motion.path
+                    d="M 128 45 A 25 25 0 0 1 128 85"
+                    fill="none"
+                    stroke="var(--blue)"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    animate={{
+                      scale: isPhoneHovered ? [0.95, 1.25, 0.95] : [0.98, 1.15, 0.98],
+                      opacity: isPhoneHovered ? [0.2, 0.9, 0.2] : [0.3, 0.7, 0.3],
+                    }}
+                    transition={{
+                      repeat: Infinity,
+                      duration: isPhoneHovered ? 0.7 : 1.3,
+                      ease: 'easeInOut',
+                    }}
+                    style={{ originX: '80px', originY: '65px' }}
+                  />
+                  <motion.path
+                    d="M 138 35 A 40 40 0 0 1 138 95"
+                    fill="none"
+                    stroke="var(--blue)"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    animate={{
+                      scale: isPhoneHovered ? [0.95, 1.25, 0.95] : [0.98, 1.15, 0.98],
+                      opacity: isPhoneHovered ? [0.1, 0.7, 0.1] : [0.15, 0.5, 0.15],
+                    }}
+                    transition={{
+                      repeat: Infinity,
+                      duration: isPhoneHovered ? 0.7 : 1.3,
+                      ease: 'easeInOut',
+                      delay: isPhoneHovered ? 0.15 : 0.3,
+                    }}
+                    style={{ originX: '80px', originY: '65px' }}
+                  />
+
+                  {/* Vibrating Phone Chassis */}
+                  <motion.g
+                    animate={{
+                      rotate: isPhoneHovered ? [-6, 6, -6, 6, -6, 6, 0] : [-3, 3, -3, 3, 0],
+                      x: isPhoneHovered ? [-1.5, 1.5, -1.5, 1.5, 0] : [-0.5, 0.5, -0.5, 0.5, 0],
+                      y: isPhoneHovered ? [-1, 1, -1, 1, 0] : 0,
+                    }}
+                    transition={{
+                      repeat: Infinity,
+                      duration: isPhoneHovered ? 0.22 : 0.45,
+                      ease: 'linear',
+                    }}
+                    style={{ originX: '80px', originY: '65px' }}
+                  >
+                    {/* Device Shadow */}
+                    <rect
+                      x="54"
+                      y="24"
+                      width="52"
+                      height="82"
+                      rx="12"
+                      fill="rgba(0,0,0,0.08)"
+                      style={{ filter: 'blur(3px)' }}
+                    />
+
+                    {/* Smartphone Bezel */}
+                    <rect
+                      x="52"
+                      y="22"
+                      width="56"
+                      height="86"
+                      rx="14"
+                      fill="var(--text-1)"
+                    />
+
+                    {/* Device screen */}
+                    <rect
+                      x="55"
+                      y="25"
+                      width="50"
+                      height="80"
+                      rx="11"
+                      fill="var(--surface)"
+                    />
+
+                    {/* Dynamic Notch / Island */}
+                    <rect
+                      x="70"
+                      y="27"
+                      width="20"
+                      height="4"
+                      rx="2"
+                      fill="var(--text-1)"
+                    />
+
+                    {/* Screen Telemetry Caller UI */}
+                    <circle
+                      cx="80"
+                      cy="46"
+                      r="9"
+                      fill="var(--bg-subtle)"
+                      stroke="var(--border)"
+                      strokeWidth="1"
+                    />
+                    <path
+                      d="M 75 53 C 75 49, 85 49, 85 53"
+                      fill="none"
+                      stroke="var(--text-3)"
+                      strokeWidth="1.5"
+                    />
+                    <circle
+                      cx="80"
+                      cy="44"
+                      r="3.5"
+                      fill="var(--text-3)"
+                    />
+
+                    <text
+                      x="80"
+                      y="65"
+                      textAnchor="middle"
+                      fill="var(--text-1)"
+                      fontSize="6.5px"
+                      fontWeight="700"
+                      fontFamily="var(--font-mono)"
+                    >
+                      CALLING...
+                    </text>
+                    <text
+                      x="80"
+                      y="73"
+                      textAnchor="middle"
+                      fill="var(--text-3)"
+                      fontSize="5px"
+                      fontWeight="500"
+                      fontFamily="var(--font-sans)"
+                    >
+                      Rinneagan
+                    </text>
+
+                    {/* Call action buttons */}
+                    <circle
+                      cx="69"
+                      cy="90"
+                      r="5"
+                      fill="var(--red)"
+                      style={{ opacity: 0.85 }}
+                    />
+                    <line x1="67" y1="90" x2="71" y2="90" stroke="#ffffff" strokeWidth="1" />
+
+                    <circle
+                      cx="91"
+                      cy="90"
+                      r="5"
+                      fill="var(--green)"
+                      style={{ opacity: 0.85 }}
+                    />
+                    <path
+                      d="M 89.5 91 C 89.5 89, 92.5 89, 92.5 91"
+                      fill="none"
+                      stroke="#ffffff"
+                      strokeWidth="0.8"
+                    />
+                  </motion.g>
+                </svg>
+              </div>
             </div>
 
             <div className="form-group">
