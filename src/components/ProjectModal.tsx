@@ -23,13 +23,54 @@ export function ProjectModal({ repo, onClose }: ProjectModalProps) {
   const [activeTab, setActiveTab] = useState<'overview' | 'dna'>('overview');
   const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
 
+  // Simulation states
+  const [isSimulating, setIsSimulating] = useState(false);
+  const [simConnIndex, setSimConnIndex] = useState<number>(-1);
+  const [simNodeId, setSimNodeId] = useState<string | null>(null);
+
   // Reset modal tab state when a different repository is loaded
   useEffect(() => {
     if (repo) {
       setActiveTab('overview');
       setHoveredNodeId(null);
+      setIsSimulating(false);
+      setSimConnIndex(-1);
+      setSimNodeId(null);
     }
   }, [repo]);
+
+  const runSimulation = async (dna: any) => {
+    if (isSimulating) return;
+    setIsSimulating(true);
+    setSimConnIndex(-1);
+    setSimNodeId(null);
+
+    for (let i = 0; i < dna.connections.length; i++) {
+      const conn = dna.connections[i];
+      
+      // Node source processing
+      setSimNodeId(conn.from);
+      setSimConnIndex(-1);
+      await new Promise((resolve) => setTimeout(resolve, 800));
+      
+      // Wire transmitting
+      setSimNodeId(null);
+      setSimConnIndex(i);
+      await new Promise((resolve) => setTimeout(resolve, 1200));
+    }
+    
+    // Land on target
+    if (dna.connections.length > 0) {
+      const lastConn = dna.connections[dna.connections.length - 1];
+      setSimNodeId(lastConn.to);
+      setSimConnIndex(-1);
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+    }
+
+    setIsSimulating(false);
+    setSimConnIndex(-1);
+    setSimNodeId(null);
+  };
 
   if (!repo) return null;
 
@@ -230,9 +271,34 @@ export function ProjectModal({ repo, onClose }: ProjectModalProps) {
                 const dna = getProjectDNA(repo.name, repo.language);
                 return (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                    <p style={{ fontSize: '0.86rem', color: 'var(--text-2)', lineHeight: '1.5', margin: 0 }}>
-                      {dna.summary}
-                    </p>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' }}>
+                      <p style={{ fontSize: '0.86rem', color: 'var(--text-2)', lineHeight: '1.5', margin: 0, flex: 1 }}>
+                        {dna.summary}
+                      </p>
+                      <button
+                        onClick={() => runSimulation(dna)}
+                        disabled={isSimulating}
+                        className={`btn ${isSimulating ? 'btn-ghost' : 'btn-primary'}`}
+                        style={{
+                          fontSize: '0.75rem',
+                          padding: '0.4rem 0.85rem',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.35rem',
+                          cursor: isSimulating ? 'not-allowed' : 'pointer',
+                          opacity: isSimulating ? 0.6 : 1,
+                        }}
+                      >
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill={isSimulating ? 'none' : 'currentColor'} stroke="currentColor" strokeWidth="2">
+                          {isSimulating ? (
+                            <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
+                          ) : (
+                            <polygon points="5 3 19 12 5 21 5 3" />
+                          )}
+                        </svg>
+                        <span>{isSimulating ? 'Simulating...' : 'Simulate DNA Flow'}</span>
+                      </button>
+                    </div>
 
                     {/* Interactive Canvas */}
                     <div style={{
@@ -252,6 +318,7 @@ export function ProjectModal({ repo, onClose }: ProjectModalProps) {
 
                           const midX = (fromNode.x + toNode.x) / 2;
                           const midY = (fromNode.y + toNode.y) / 2;
+                          const isWireActive = simConnIndex === idx;
 
                           return (
                             <g key={`${conn.from}-${conn.to}-${idx}`}>
@@ -270,10 +337,10 @@ export function ProjectModal({ repo, onClose }: ProjectModalProps) {
                                 y1={fromNode.y}
                                 x2={toNode.x}
                                 y2={toNode.y}
-                                stroke="var(--blue)"
+                                stroke={isWireActive ? "var(--blue)" : "var(--border-dim)"}
                                 strokeWidth="2"
-                                className="dna-wire"
-                                style={{ opacity: 0.8 }}
+                                className={isWireActive ? "" : "dna-wire"}
+                                style={{ opacity: isWireActive ? 1 : 0.4 }}
                               />
                               {/* Text label */}
                               <text
@@ -288,6 +355,19 @@ export function ProjectModal({ repo, onClose }: ProjectModalProps) {
                               >
                                 {conn.label}
                               </text>
+
+                              {/* Glowing simulated particle traveling along the wire */}
+                              {isWireActive && (
+                                <motion.circle
+                                  cx={fromNode.x}
+                                  cy={fromNode.y}
+                                  r="5"
+                                  fill="var(--blue)"
+                                  style={{ filter: 'drop-shadow(0 0 4px var(--blue))' }}
+                                  animate={{ cx: toNode.x, cy: toNode.y }}
+                                  transition={{ duration: 1.1, ease: 'easeInOut' }}
+                                />
+                              )}
                             </g>
                           );
                         })}
@@ -295,6 +375,9 @@ export function ProjectModal({ repo, onClose }: ProjectModalProps) {
                         {/* Interactive capsules */}
                         {dna.nodes.map((node) => {
                           const isHovered = hoveredNodeId === node.id;
+                          const isSimActive = simNodeId === node.id;
+                          const isActive = isHovered || isSimActive;
+
                           return (
                             <g
                               key={node.id}
@@ -303,15 +386,17 @@ export function ProjectModal({ repo, onClose }: ProjectModalProps) {
                               onClick={() => setHoveredNodeId(node.id === hoveredNodeId ? null : node.id)}
                               style={{ cursor: 'pointer' }}
                             >
-                              <rect
+                              <motion.rect
                                 x={node.x - 55}
                                 y={node.y - 18}
                                 width="110"
                                 height="36"
                                 rx="10"
-                                fill={isHovered ? 'var(--blue-bg)' : 'var(--surface)'}
-                                stroke={isHovered ? 'var(--blue)' : 'var(--border)'}
-                                strokeWidth={isHovered ? '2' : '1.5'}
+                                fill={isActive ? 'var(--blue-bg)' : 'var(--surface)'}
+                                stroke={isActive ? 'var(--blue)' : 'var(--border)'}
+                                strokeWidth={isActive ? '2' : '1.5'}
+                                animate={isSimActive ? { scale: [1, 1.06, 1] } : {}}
+                                transition={{ repeat: Infinity, duration: 0.8 }}
                                 style={{ transition: 'all 0.15s' }}
                               />
                               <text
@@ -356,7 +441,37 @@ export function ProjectModal({ repo, onClose }: ProjectModalProps) {
                       transition: 'all 0.15s'
                     }}>
                       {(() => {
-                        const activeNode = dna.nodes.find((n) => n.id === hoveredNodeId);
+                        if (isSimulating && simConnIndex !== -1) {
+                          const conn = dna.connections[simConnIndex];
+                          const fromNode = dna.nodes.find((n) => n.id === conn.from);
+                          const toNode = dna.nodes.find((n) => n.id === conn.to);
+                          return (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <span style={{
+                                  fontSize: '0.62rem',
+                                  fontWeight: 700,
+                                  textTransform: 'uppercase',
+                                  color: 'var(--green)',
+                                  background: 'rgba(22, 163, 74, 0.1)',
+                                  padding: '2px 6px',
+                                  borderRadius: '4px',
+                                  border: '1px solid rgba(22, 163, 74, 0.2)'
+                                }}>
+                                  DATA STREAMING
+                                </span>
+                                <strong style={{ fontSize: '0.8rem', color: 'var(--text-1)' }}>
+                                  Signal: {conn.label}
+                                </strong>
+                              </div>
+                              <p style={{ fontSize: '0.78rem', color: 'var(--text-2)', margin: 0 }}>
+                                Routing package data flow from <span style={{fontWeight:600}}>{fromNode?.label}</span> to <span style={{fontWeight:600}}>{toNode?.label}</span>...
+                              </p>
+                            </div>
+                          );
+                        }
+
+                        const activeNode = dna.nodes.find((n) => n.id === (hoveredNodeId || simNodeId));
                         if (activeNode) {
                           return (
                             <>
@@ -371,7 +486,7 @@ export function ProjectModal({ repo, onClose }: ProjectModalProps) {
                                   borderRadius: '4px',
                                   border: '1px solid var(--blue-border)'
                                 }}>
-                                  {activeNode.role}
+                                  {isSimulating && simNodeId === activeNode.id ? 'PROCESSING' : activeNode.role}
                                 </span>
                                 <strong style={{ fontSize: '0.85rem', color: 'var(--text-1)' }}>
                                   {activeNode.label}
