@@ -198,77 +198,108 @@ export function Projects({ repos, selectedRepo, onSelectRepo }: ProjectsProps) {
                     <div
                       style={{
                         height: '100%',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        justifyContent: 'space-between',
+                        position: 'relative',
                         padding: '1.5rem',
-                        background: 'var(--surface)',
-                        border: isCenter ? '2px solid var(--blue)' : '1px solid var(--border)',
-                        boxShadow: isCenter ? 'var(--shadow-lg)' : 'var(--shadow-sm)',
-                        borderRadius: 'var(--radius-lg)',
-                        transition: 'border 0.2s, box-shadow 0.2s',
                         textAlign: 'left',
+                        background: 'transparent',
                       }}
                     >
-                      <div>
-                        {/* Card Title */}
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
-                          <span style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-1)' }}>
-                            {repo.name}
-                          </span>
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-3)" strokeWidth="2.5">
-                            <line x1="7" y1="17" x2="17" y2="7" />
-                            <polyline points="7 7 17 7 17 17" />
-                          </svg>
-                        </div>
-                        
-                        {/* Card Description */}
-                        <div
-                          style={{
-                            fontSize: '0.82rem',
-                            color: 'var(--text-2)',
-                            lineHeight: '1.55',
-                            display: '-webkit-box',
-                            WebkitLineClamp: 5,
-                            lineClamp: 5,
-                            WebkitBoxOrient: 'vertical',
-                            overflow: 'hidden',
-                          }}
-                        >
-                          {repo.description || 'No description provided.'}
-                        </div>
-                      </div>
+                      {/* Squircle SVG Background Frame */}
+                      <svg
+                        style={{
+                          position: 'absolute',
+                          inset: 0,
+                          width: '100%',
+                          height: '100%',
+                          zIndex: 0,
+                          overflow: 'visible',
+                          filter: isCenter ? 'drop-shadow(0 12px 24px rgba(0,0,0,0.1))' : 'drop-shadow(0 4px 8px rgba(0,0,0,0.03))',
+                          transition: 'filter 0.2s',
+                        }}
+                        viewBox="0 0 100 100"
+                        preserveAspectRatio="none"
+                      >
+                        <path
+                          d="M 50,0 C 85,0 100,15 100,50 C 100,85 85,100 50,100 C 15,100 0,85 0,50 C 0,15 15,0 50,0 Z"
+                          fill="var(--surface)"
+                          stroke={isCenter ? 'var(--blue)' : 'var(--border)'}
+                          strokeWidth={isCenter ? '2.5' : '1.5'}
+                          vectorEffect="non-scaling-stroke"
+                          style={{ transition: 'stroke 0.2s, stroke-width 0.2s' }}
+                        />
+                      </svg>
 
-                      {/* Card Footer */}
+                      {/* Card Content Wrapper */}
                       <div
                         style={{
+                          position: 'relative',
+                          zIndex: 1,
+                          height: '100%',
                           display: 'flex',
-                          alignItems: 'center',
+                          flexDirection: 'column',
                           justifyContent: 'space-between',
-                          paddingTop: '0.75rem',
-                          borderTop: '1px solid var(--border-dim)',
-                          marginTop: 'auto',
                         }}
                       >
-                        {repo.languages && repo.languages.length > 0 ? (
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
-                            {repo.languages.slice(0, 4).map((lang) => (
-                              <div key={lang} title={lang} style={{ display: 'flex', alignItems: 'center' }}>
-                                <LanguageIcon language={lang} size={18} />
-                              </div>
-                            ))}
+                        <div>
+                          {/* Card Title */}
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+                            <span style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-1)' }}>
+                              {repo.name}
+                            </span>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-3)" strokeWidth="2.5">
+                              <line x1="7" y1="17" x2="17" y2="7" />
+                              <polyline points="7 7 17 7 17 17" />
+                            </svg>
                           </div>
-                        ) : repo.language ? (
-                          <div title={repo.language} style={{ display: 'flex', alignItems: 'center' }}>
-                            <LanguageIcon language={repo.language} size={18} />
+                          
+                          {/* Card Description */}
+                          <div
+                            style={{
+                              fontSize: '0.82rem',
+                              color: 'var(--text-2)',
+                              lineHeight: '1.55',
+                              display: '-webkit-box',
+                              WebkitLineClamp: 5,
+                              lineClamp: 5,
+                              WebkitBoxOrient: 'vertical',
+                              overflow: 'hidden',
+                            }}
+                          >
+                            {repo.description || 'No description provided.'}
                           </div>
-                        ) : <span />}
-                        
-                        <div className="star-count" style={{ fontSize: '0.78rem' }}>
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                          </svg>
-                          {repo.stargazers_count}
+                        </div>
+
+                        {/* Card Footer */}
+                        <div
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            paddingTop: '0.75rem',
+                            borderTop: '1px solid var(--border-dim)',
+                            marginTop: 'auto',
+                          }}
+                        >
+                          {repo.languages && repo.languages.length > 0 ? (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
+                              {repo.languages.slice(0, 4).map((lang) => (
+                                <div key={lang} title={lang} style={{ display: 'flex', alignItems: 'center' }}>
+                                  <LanguageIcon language={lang} size={18} />
+                                </div>
+                              ))}
+                            </div>
+                          ) : repo.language ? (
+                            <div title={repo.language} style={{ display: 'flex', alignItems: 'center' }}>
+                              <LanguageIcon language={repo.language} size={18} />
+                            </div>
+                          ) : <span />}
+                          
+                          <div className="star-count" style={{ fontSize: '0.78rem' }}>
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                            </svg>
+                            {repo.stargazers_count}
+                          </div>
                         </div>
                       </div>
                     </div>
