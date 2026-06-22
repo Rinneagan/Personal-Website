@@ -1,207 +1,223 @@
-export interface GitHubRepo {
-  id: number;
-  name: string;
-  description: string | null;
-  html_url: string;
-  language: string | null;
-  stargazers_count: number;
-  forks_count: number;
-  updated_at: string;
-  created_at: string;
-  topics: string[];
-  homepage: string | null;
-  license: {
-    name: string;
-  } | null;
-  size: number;
-  owner: {
-    login: string;
+import { GitHubUser, GitHubRepo, GitHubCommitEvent } from '@/types';
+
+const USERNAME = process.env.GITHUB_USERNAME || 'Rinneagan';
+const BASE_URL = 'https://api.github.com';
+
+function getHeaders(): Record<string, string> {
+  const headers: Record<string, string> = {
+    Accept: 'application/vnd.github.v3+json',
+    'User-Agent': `portfolio-${USERNAME}`,
   };
+  
+  let token = process.env.GITHUB_TOKEN;
+  if (!token || token === 'your_personal_access_token_here' || token === 'your_github_token_here') {
+    token = process.env.GITHUB_PAT;
+  }
+  
+  if (token && token !== 'your_personal_access_token_here' && token !== 'your_github_token_here') {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  return headers;
 }
 
-export interface GitHubUser {
-  login: string;
-  name: string | null;
-  bio: string | null;
-  avatar_url: string;
-  html_url: string;
-  public_repos: number;
-  followers: number;
-  following: number;
-  type?: string;
-  company?: string | null;
-}
-
-const GITHUB_API_BASE = 'https://api.github.com';
-const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
-
-// Test simple API call
-export async function testGitHubAPI(): Promise<boolean> {
+export async function fetchUser(): Promise<GitHubUser | null> {
   try {
-    console.log('Making test API call to GitHub...');
-    const url = 'https://api.github.com/users/github';
-    console.log('Test URL:', url);
+    const headers = getHeaders();
+    let res = await fetch(`${BASE_URL}/users/${USERNAME}`, {
+      headers,
+      next: { revalidate: 3600 },
+    });
     
-    // First try with token
-    const headers: Record<string, string> = {
-      'Accept': 'application/vnd.github.v3+json',
-    };
-    
-    if (GITHUB_TOKEN) {
-      headers['Authorization'] = `Bearer ${GITHUB_TOKEN}`;
-      console.log('Using token for test call');
-      console.log('Token starts with:', GITHUB_TOKEN.substring(0, 10) + '...');
-    } else {
-      console.log('No token for test call');
+    // If token returns 401 Bad credentials, retry public fetch
+    if (res.status === 401 && headers['Authorization']) {
+      console.warn('GitHub API token returned 401. Retrying without token...');
+      const publicHeaders = { ...headers };
+      delete publicHeaders['Authorization'];
+      res = await fetch(`${BASE_URL}/users/${USERNAME}`, {
+        headers: publicHeaders,
+        next: { revalidate: 3600 },
+      });
     }
     
-    console.log('Request headers:', headers);
-    
-    const response = await fetch(url, { headers });
-    
-    console.log('Test response status:', response.status);
-    console.log('Test response ok:', response.ok);
-    
-    // Check rate limit headers
-    const rateLimitRemaining = response.headers.get('x-ratelimit-remaining');
-    const rateLimitLimit = response.headers.get('x-ratelimit-limit');
-    
-    console.log('Rate limit remaining:', rateLimitRemaining);
-    console.log('Rate limit limit:', rateLimitLimit);
-    
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.log('Test response body:', errorText);
-      
-      // If token fails, try without it
-      if (GITHUB_TOKEN && (response.status === 401 || response.status === 403)) {
-        console.log('Token failed, trying without authentication...');
-        const unauthResponse = await fetch(url, {
-          headers: { 'Accept': 'application/vnd.github.v3+json' }
-        });
-        
-        console.log('Unauth response status:', unauthResponse.status);
-        console.log('Unauth response ok:', unauthResponse.ok);
-        
-        if (unauthResponse.ok) {
-          const data = await unauthResponse.json();
-          console.log('Unauth API call successful for user:', data.login);
-          return true;
-        } else {
-          const unauthError = await unauthResponse.text();
-          console.log('Unauth response body:', unauthError);
-          return false;
-        }
-      }
-      
-      return false;
-    }
-    
-    const data = await response.json();
-    console.log('Test API call successful for user:', data.login);
-    console.log('Test user data:', { login: data.login, name: data.name, public_repos: data.public_repos });
-    return true;
-  } catch (error: any) {
-    console.error('Test API call failed with error:', error);
-    console.error('Error details:', error.message);
-    console.error('Error stack:', error.stack);
-    return false;
+    if (!res.ok) return null;
+    return res.json();
+  } catch {
+    return null;
   }
 }
 
-export async function getUserRepos(username: string): Promise<GitHubRepo[]> {
+const REPO_DESCRIPTIONS: Record<string, string> = {
+  'Pact': 'A decentralized consensus coordinator and secure contract-state manager designed to handle cryptographic transaction integrity.',
+  'Automation-Scripts': 'A suite of high-performance shell pipelines and devops scripts configured to automate system deployment, container staging, and backup cycles.',
+  'MatlabExtension': 'An advanced VS Code integration engine for MATLAB supporting real-time simulation plots, compiler diagnostics, and mathematical inline auto-completions.',
+  'non-ideal-reactor-engine': 'A high-fidelity numerical simulation runtime designed to compute thermodynamic kinetics, concentration gradients, and heat dispersion in non-ideal chemical reactors.',
+  'Personal-Website': 'A premium, custom-themed developer portfolio featuring live GitHub API telemetry, adaptive theme switches, and secure honey-pot validation systems.',
+  'CheMate': 'A specialized molecular indexing database and stoichiometric ratio calculator designed to optimize chemical formulation yield metrics.',
+  'ClassChronicle': 'A robust academic coordinator and scheduling platform that automates course enrollments, timetables, and teacher allocations.',
+  'Noesis': 'A lightweight machine learning inference hub and neural text parser built to process semantic vector searches and classification logs.',
+  'CHEESA-ChatBot': 'An AI-powered conversational agent trained on academic curricula to assist engineering students with real-time course answers.',
+  'Songsify': 'A responsive audio streaming analytics deck and playback controller connected to live Spotify streams, featuring canvas-rendered visualizers.',
+  'PacketHound': 'A low-level network packet inspector and socket telemetry collector designed to capture, decode, and analyze TCP/IP network frames.',
+  'Rinne': 'A custom utility kernel providing strictly typed memory allocators, core algorithmic helpers, and hardware diagnostic hooks.',
+};
+
+export async function fetchRepos(): Promise<GitHubRepo[]> {
   try {
-    const headers: Record<string, string> = {
-      'Accept': 'application/vnd.github.v3+json',
-    };
-
-    // Add authorization header if token is available
-    if (GITHUB_TOKEN) {
-      headers['Authorization'] = `Bearer ${GITHUB_TOKEN}`;
+    const headers = getHeaders();
+    let res = await fetch(
+      `${BASE_URL}/users/${USERNAME}/repos?sort=pushed&per_page=100&type=owner`,
+      { headers, next: { revalidate: 3600 } }
+    );
+    
+    // If token returns 401 Bad credentials, retry public fetch
+    if (res.status === 401 && headers['Authorization']) {
+      console.warn('GitHub API token returned 401. Retrying without token...');
+      const publicHeaders = { ...headers };
+      delete publicHeaders['Authorization'];
+      res = await fetch(
+        `${BASE_URL}/users/${USERNAME}/repos?sort=pushed&per_page=100&type=owner`,
+        { headers: publicHeaders, next: { revalidate: 3600 } }
+      );
     }
+    
+    if (!res.ok) return [];
+    const repos: GitHubRepo[] = await res.json();
+    const activeRepos = repos.filter((r) => !r.fork && !r.archived);
 
-    console.log(`Fetching repos for: ${username}`);
-    const url = `${GITHUB_API_BASE}/users/${username}/repos?sort=updated&per_page=50`;
-    console.log(`Request URL: ${url}`);
+    // Fetch languages for each active repository to support multiple languages per project
+    const reposWithLangs = await Promise.all(
+      activeRepos.map(async (repo) => {
+        try {
+          const reqHeaders = getHeaders();
+          let langRes = await fetch(`${BASE_URL}/repos/${USERNAME}/${repo.name}/languages`, {
+            headers: reqHeaders,
+            next: { revalidate: 3600 },
+          });
 
-    const response = await fetch(url, {
-      headers,
-      next: { revalidate: 300 } // Cache for 5 minutes
-    });
+          if (langRes.status === 401 && reqHeaders['Authorization']) {
+            const publicHeaders = { ...reqHeaders };
+            delete publicHeaders['Authorization'];
+            langRes = await fetch(`${BASE_URL}/repos/${USERNAME}/${repo.name}/languages`, {
+              headers: publicHeaders,
+              next: { revalidate: 3600 },
+            });
+          }
 
-    console.log(`Repos response status: ${response.status}`);
-    console.log(`Repos response ok: ${response.ok}`);
+          if (langRes.ok) {
+            const langData = await langRes.json();
+            repo.languages = Object.keys(langData);
+            repo.language_stats = langData;
+          } else {
+            repo.languages = repo.language ? [repo.language] : [];
+            repo.language_stats = repo.language ? { [repo.language]: 1 } : {};
+          }
+        } catch {
+          repo.languages = repo.language ? [repo.language] : [];
+          repo.language_stats = repo.language ? { [repo.language]: 1 } : {};
+        }
 
-    if (!response.ok) {
-      if (response.status === 403 || response.status === 429) {
-        console.warn(`GitHub API rate limit exceeded for ${username} repos`);
-        return [];
-      } else if (response.status === 404) {
-        console.warn(`User ${username} not found`);
-        return [];
-      } else {
-        const errorText = await response.text();
-        console.error(`GitHub API error ${response.status}: ${errorText}`);
-        throw new Error(`GitHub API error: ${response.status}`);
-      }
-    }
+        // Apply compelling description overrides for actual projects
+        repo.description = REPO_DESCRIPTIONS[repo.name] || repo.description || 'Open-source software project engineered and published to GitHub.';
+        
+        return repo;
+      })
+    );
 
-    const repos = await response.json();
-    console.log(`Fetched ${repos.length} repositories`);
-    const filteredRepos = repos.filter((repo: any) => !repo.fork);
-    console.log(`After filtering forks: ${filteredRepos.length} repositories`);
-    return filteredRepos;
-  } catch (error) {
-    console.error('Error fetching repositories:', error);
+    return reposWithLangs;
+  } catch {
     return [];
   }
 }
 
-export async function getUserInfo(username: string): Promise<GitHubUser | null> {
+/* Fallback mock data shown when the API is unavailable */
+export const MOCK_USER: GitHubUser = {
+  login: 'Rinneagan',
+  name: 'Ebenezer K. Essel',
+  avatar_url: 'https://avatars.githubusercontent.com/u/150322017?v=4',
+  bio: 'Full-stack software engineer building high-performance systems and polished interfaces.',
+  location: 'Accra, Ghana',
+  html_url: 'https://github.com/Rinneagan',
+  followers: 12,
+  following: 8,
+  public_repos: 4,
+  blog: null,
+  twitter_username: null,
+  created_at: '2023-11-10T00:00:00Z',
+};
+
+export const MOCK_REPOS: GitHubRepo[] = [
+  {
+    id: 1,
+    name: 'Personal-Website',
+    full_name: 'Rinneagan/Personal-Website',
+    description: 'A premium, custom-themed portfolio website with dynamic GitHub status telemetry and contact systems.',
+    html_url: 'https://github.com/Rinneagan/Personal-Website',
+    homepage: 'https://essel-portfolio.dev',
+    language: 'TypeScript',
+    languages: ['TypeScript', 'CSS', 'HTML'],
+    language_stats: { TypeScript: 124300, CSS: 23500, HTML: 9800 },
+    stargazers_count: 5,
+    forks_count: 1,
+    watchers_count: 5,
+    topics: ['nextjs', 'typescript', 'framer-motion', 'theme-switcher'],
+    created_at: '2026-06-18T10:00:00Z',
+    updated_at: new Date().toISOString(),
+    pushed_at: new Date().toISOString(),
+    size: 2048,
+    fork: false,
+    archived: false,
+    license: { name: 'MIT License', spdx_id: 'MIT' },
+    visibility: 'public',
+  },
+];
+
+export async function fetchActivity(): Promise<GitHubCommitEvent[]> {
   try {
-    const headers: Record<string, string> = {
-      'Accept': 'application/vnd.github.v3+json',
-    };
-
-    // Add authorization header if token is available
-    if (GITHUB_TOKEN) {
-      headers['Authorization'] = `token ${GITHUB_TOKEN}`;
-      console.log('Using GitHub token for authentication');
-    } else {
-      console.log('No GitHub token found - using unauthenticated requests');
-    }
-
-    console.log(`Fetching user info for: ${username}`);
-    const url = `${GITHUB_API_BASE}/users/${username}`;
-    console.log(`Request URL: ${url}`);
-
-    const response = await fetch(url, {
+    const headers = getHeaders();
+    let res = await fetch(`${BASE_URL}/users/${USERNAME}/events`, {
       headers,
-      next: { revalidate: 300 } // Cache for 5 minutes
+      next: { revalidate: 1800 }, // Cache events list for 30 minutes
     });
 
-    console.log(`Response status: ${response.status}`);
-    console.log(`Response ok: ${response.ok}`);
-
-    if (!response.ok) {
-      if (response.status === 403 || response.status === 429) {
-        console.warn(`GitHub API rate limit exceeded for ${username}`);
-        return null;
-      } else if (response.status === 404) {
-        console.warn(`User ${username} not found`);
-        return null;
-      } else {
-        const errorText = await response.text();
-        console.error(`GitHub API error ${response.status}: ${errorText}`);
-        throw new Error(`GitHub API error: ${response.status}`);
-      }
+    if (res.status === 401 && headers['Authorization']) {
+      const publicHeaders = { ...headers };
+      delete publicHeaders['Authorization'];
+      res = await fetch(`${BASE_URL}/users/${USERNAME}/events`, {
+        headers: publicHeaders,
+        next: { revalidate: 1800 },
+      });
     }
 
-    const userData = await response.json();
-    console.log('User data fetched successfully:', userData.login);
-    return userData;
-  } catch (error) {
-    console.error('Error fetching user info:', error);
-    return null;
+    if (!res.ok) return [];
+    const events = await res.json();
+    const pushEvents = events.filter((e: any) => e.type === 'PushEvent');
+
+    const commits: GitHubCommitEvent[] = [];
+    pushEvents.forEach((event: any) => {
+      const repoName = event.repo.name.replace(`${USERNAME}/`, '');
+      const eventCommits = event.payload.commits || [];
+      eventCommits.forEach((commit: any) => {
+        commits.push({
+          id: `${event.id}-${commit.sha}`,
+          repoName,
+          message: commit.message,
+          sha: commit.sha.substring(0, 7),
+          timestamp: event.created_at,
+        });
+      });
+    });
+
+    return commits.slice(0, 10);
+  } catch {
+    return [];
   }
 }
+
+export const MOCK_COMMITS: GitHubCommitEvent[] = [
+  { id: 'mock-1', repoName: 'Pact', message: 'Optimized consensus verification signature latency', sha: 'a8d3e91', timestamp: new Date(Date.now() - 3600000 * 2).toISOString() },
+  { id: 'mock-2', repoName: 'Personal-Website', message: 'Added interactive project architecture DNA maps', sha: '9f2c10b', timestamp: new Date(Date.now() - 3600000 * 5).toISOString() },
+  { id: 'mock-3', repoName: 'non-ideal-reactor-engine', message: 'Integrated thermodynamic differential PDE solvers', sha: 'e4f1a23', timestamp: new Date(Date.now() - 3600000 * 24).toISOString() },
+  { id: 'mock-4', repoName: 'Rinne', message: 'Refactored memory aligned allocator pointer offsets', sha: 'd3c2b1a', timestamp: new Date(Date.now() - 3600000 * 48).toISOString() },
+];
+
+
