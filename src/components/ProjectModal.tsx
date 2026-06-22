@@ -73,6 +73,102 @@ export function ProjectModal({ repo, onClose }: ProjectModalProps) {
     }
   }, [repo]);
 
+  // Dynamic files view states
+  const [filesList, setFilesList] = useState<{ path: string; name: string; size: number }[]>([]);
+  const [isLoadingFiles, setIsLoadingFiles] = useState(false);
+  const [activeBranch, setActiveBranch] = useState('main');
+  const [useMockFiles, setUseMockFiles] = useState(false);
+
+  const [activeFileContent, setActiveFileContent] = useState('');
+  const [activeFileLanguage, setActiveFileLanguage] = useState<'go' | 'python' | 'typescript' | 'rust' | 'cpp' | 'bash' | 'markdown' | 'javascript'>('typescript');
+  const [isLoadingContent, setIsLoadingContent] = useState(false);
+
+  useEffect(() => {
+    if (!repo || activeTab !== 'code') return;
+    const repoName = repo.name;
+
+    async function loadFiles() {
+      setIsLoadingFiles(true);
+      setUseMockFiles(false);
+      try {
+        const res = await fetch(`/api/github/files?repo=${repoName}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.isFallback || !data.files || data.files.length === 0) {
+            setUseMockFiles(true);
+          } else {
+            setFilesList(data.files);
+            setActiveBranch(data.defaultBranch || 'main');
+            if (data.files.length > 0) {
+              setSelectedFilePath(data.files[0].path);
+            }
+          }
+        } else {
+          setUseMockFiles(true);
+        }
+      } catch (err) {
+        console.error('Error fetching repo files:', err);
+        setUseMockFiles(true);
+      } finally {
+        setIsLoadingFiles(false);
+      }
+    }
+
+    loadFiles();
+  }, [repo, activeTab]);
+
+  useEffect(() => {
+    if (!repo || activeTab !== 'code' || !selectedFilePath || useMockFiles) return;
+    const repoName = repo.name;
+    const repoLang = repo.language || 'TypeScript';
+    const filePath = selectedFilePath;
+
+    async function loadFileContent() {
+      setIsLoadingContent(true);
+      try {
+        const res = await fetch(
+          `/api/github/file-content?repo=${repoName}&path=${encodeURIComponent(filePath)}&branch=${activeBranch}`
+        );
+        if (res.ok) {
+          const data = await res.json();
+          if (data.isFallback) {
+            const mockTree = getProjectCodeTree(repoName, repoLang);
+            const mockFile = mockTree[filePath];
+            if (mockFile) {
+              setActiveFileContent(mockFile.content);
+              setActiveFileLanguage(mockFile.language);
+            } else {
+              setActiveFileContent('// Content load error (mock path not found)');
+              setActiveFileLanguage('typescript');
+            }
+          } else {
+            setActiveFileContent(data.content);
+            setActiveFileLanguage(data.language);
+          }
+        } else {
+          const mockTree = getProjectCodeTree(repoName, repoLang);
+          const mockFile = mockTree[filePath];
+          if (mockFile) {
+            setActiveFileContent(mockFile.content);
+            setActiveFileLanguage(mockFile.language);
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching file content:', err);
+        const mockTree = getProjectCodeTree(repoName, repoLang);
+        const mockFile = mockTree[filePath];
+        if (mockFile) {
+          setActiveFileContent(mockFile.content);
+          setActiveFileLanguage(mockFile.language);
+        }
+      } finally {
+        setIsLoadingContent(false);
+      }
+    }
+
+    loadFileContent();
+  }, [repo, activeTab, selectedFilePath, useMockFiles, activeBranch]);
+
   const runSimulation = async (dna: any) => {
     if (isSimulating) return;
     setIsSimulating(true);
@@ -589,100 +685,170 @@ export function ProjectModal({ repo, onClose }: ProjectModalProps) {
             ) : (
               /* ================= PROJECT CODE VIEW TAB CONTROLS ================= */
               (() => {
-                const codeTree = getProjectCodeTree(repo.name, repo.language || 'TypeScript');
-                const filePaths = Object.keys(codeTree);
+                // If we are using mock files or the dynamic load returned empty, resolve mock tree
+                const mockTree = getProjectCodeTree(repo.name, repo.language || 'TypeScript');
+                
+                const filePaths = useMockFiles ? Object.keys(mockTree) : filesList.map(f => f.path);
                 const activePath = selectedFilePath || filePaths[0] || '';
-                const activeFile = codeTree[activePath];
+                
+                // Get active file metadata
+                let fileName = 'main.ts';
+                let fileLanguage: any = 'typescript';
+                let fileContent = '';
+
+                if (useMockFiles) {
+                  const activeFile = mockTree[activePath];
+                  if (activeFile) {
+                    fileName = activeFile.name;
+                    fileLanguage = activeFile.language;
+                    fileContent = activeFile.content;
+                  }
+                } else {
+                  const liveFile = filesList.find(f => f.path === activePath);
+                  fileName = liveFile?.name || activePath.split('/').pop() || activePath;
+                  fileLanguage = activeFileLanguage;
+                  fileContent = activeFileContent;
+                }
 
                 return (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                     <p style={{ fontSize: '0.86rem', color: 'var(--text-2)', lineHeight: '1.5', margin: 0 }}>
-                      Inspect source code, trace core algorithms, and execute mock performance diagnostics on the console.
+                      Inspect {useMockFiles ? 'staged' : 'live GitHub'} source code files, trace core algorithms, and execute performance diagnostics.
                     </p>
 
-                    {/* Side-by-side Layout */}
-                    <div className="code-view-layout">
-                      {/* Left: File Tree Selector */}
-                      <div className="code-file-tree">
+                    {isLoadingFiles ? (
+                      <div style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        height: '200px',
+                        gap: '0.75rem',
+                        color: 'var(--text-3)',
+                        fontSize: '0.8rem'
+                      }}>
                         <div style={{
-                          fontSize: '0.65rem',
-                          fontWeight: 700,
-                          textTransform: 'uppercase',
-                          letterSpacing: '0.05em',
-                          color: 'var(--text-3)',
-                          marginBottom: '0.5rem',
-                          paddingLeft: '0.25rem'
-                        }}>
-                          📂 Files
-                        </div>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
-                          {filePaths.map((path) => {
-                            const isSelected = path === activePath;
-                            return (
-                              <button
-                                key={path}
-                                onClick={() => setSelectedFilePath(path)}
-                                style={{
-                                  textAlign: 'left',
-                                  background: isSelected ? 'var(--blue-bg)' : 'transparent',
-                                  border: 'none',
-                                  borderRadius: 'var(--radius-sm)',
-                                  padding: '0.45rem 0.5rem',
-                                  fontSize: '0.74rem',
-                                  fontFamily: 'var(--font-mono)',
-                                  fontWeight: isSelected ? 700 : 500,
-                                  color: isSelected ? 'var(--blue)' : 'var(--text-2)',
-                                  cursor: 'pointer',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  gap: '0.35rem',
-                                  transition: 'all 0.15s',
-                                  borderLeft: isSelected ? '2px solid var(--blue)' : '2px solid transparent',
-                                }}
-                              >
-                                <span>{path.endsWith('.md') ? '📝' : '📄'}</span>
-                                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                  {codeTree[path].name}
-                                </span>
-                              </button>
-                            );
-                          })}
-                        </div>
+                          width: 24,
+                          height: 24,
+                          border: '2px solid var(--border)',
+                          borderTopColor: 'var(--blue)',
+                          borderRadius: '50%',
+                          animation: 'spin 0.8s linear infinite',
+                        }} />
+                        <span>Fetching repository file tree from GitHub...</span>
                       </div>
+                    ) : filePaths.length === 0 ? (
+                      <div style={{
+                        padding: '2rem',
+                        textAlign: 'center',
+                        color: 'var(--text-3)',
+                        fontSize: '0.8rem',
+                        border: '1px dashed var(--border)',
+                        borderRadius: 'var(--radius)'
+                      }}>
+                        No files found in this repository.
+                      </div>
+                    ) : (
+                      /* Side-by-side Layout */
+                      <div className="code-view-layout">
+                        {/* Left: File Tree Selector */}
+                        <div className="code-file-tree">
+                          <div style={{
+                            fontSize: '0.65rem',
+                            fontWeight: 700,
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.05em',
+                            color: 'var(--text-3)',
+                            marginBottom: '0.5rem',
+                            paddingLeft: '0.25rem'
+                          }}>
+                            📂 Files
+                          </div>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+                            {filePaths.map((path) => {
+                              const isSelected = path === activePath;
+                              const currentFileName = useMockFiles
+                                ? mockTree[path]?.name
+                                : path.split('/').pop() || path;
+                              return (
+                                <button
+                                  key={path}
+                                  onClick={() => setSelectedFilePath(path)}
+                                  style={{
+                                    textAlign: 'left',
+                                    background: isSelected ? 'var(--blue-bg)' : 'transparent',
+                                    border: 'none',
+                                    borderRadius: 'var(--radius-sm)',
+                                    padding: '0.45rem 0.5rem',
+                                    fontSize: '0.74rem',
+                                    fontFamily: 'var(--font-mono)',
+                                    fontWeight: isSelected ? 700 : 500,
+                                    color: isSelected ? 'var(--blue)' : 'var(--text-2)',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '0.35rem',
+                                    transition: 'all 0.15s',
+                                    borderLeft: isSelected ? '2px solid var(--blue)' : '2px solid transparent',
+                                  }}
+                                >
+                                  <span>{path.endsWith('.md') ? '📝' : '📄'}</span>
+                                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                    {currentFileName}
+                                  </span>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
 
-                      {/* Right: Code Viewer & Console */}
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', flex: 1, minWidth: 0 }}>
-                        {activeFile ? (
-                          <>
-                            {/* Editor Container */}
+                        {/* Right: Code Viewer & Console */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', flex: 1, minWidth: 0 }}>
+                          {isLoadingContent ? (
                             <div style={{
+                              display: 'flex',
+                              flexDirection: 'column',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              height: '310px',
+                              background: '#181816',
                               border: '1px solid var(--border)',
                               borderRadius: 'var(--radius)',
-                              overflow: 'hidden',
-                              height: '210px',
-                              background: '#181816',
-                              boxShadow: 'inset 0 2px 8px rgba(0,0,0,0.15)'
+                              gap: '0.75rem',
+                              color: '#a8a29e',
+                              fontSize: '0.75rem'
                             }}>
-                              <CodeHighlighter code={activeFile.content} language={activeFile.language} />
+                              <div style={{
+                                width: 20,
+                                height: 20,
+                                border: '2px solid #333',
+                                borderTopColor: 'var(--blue)',
+                                borderRadius: '50%',
+                                animation: 'spin 0.8s linear infinite',
+                              }} />
+                              <span>Loading file contents...</span>
                             </div>
+                          ) : (
+                            <>
+                              {/* Editor Container */}
+                              <div style={{
+                                border: '1px solid var(--border)',
+                                borderRadius: 'var(--radius)',
+                                overflow: 'hidden',
+                                height: '210px',
+                                background: '#181816',
+                                boxShadow: 'inset 0 2px 8px rgba(0,0,0,0.15)'
+                              }}>
+                                <CodeHighlighter code={fileContent} language={fileLanguage} />
+                              </div>
 
-                            {/* Telemetry Console */}
-                            <DiagnosticConsole repoName={repo.name} fileName={activeFile.name} />
-                          </>
-                        ) : (
-                          <div style={{
-                            padding: '2rem',
-                            textAlign: 'center',
-                            color: 'var(--text-3)',
-                            fontSize: '0.8rem',
-                            border: '1px dashed var(--border)',
-                            borderRadius: 'var(--radius)'
-                          }}>
-                            Select a file to inspect its source code.
-                          </div>
-                        )}
+                              {/* Telemetry Console */}
+                              <DiagnosticConsole repoName={repo.name} fileName={fileName} />
+                            </>
+                          )}
+                        </div>
                       </div>
-                    </div>
+                    )}
                   </div>
                 );
               })()
