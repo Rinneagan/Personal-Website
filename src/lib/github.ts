@@ -176,7 +176,7 @@ export async function fetchActivity(): Promise<GitHubCommitEvent[]> {
     const headers = getHeaders();
     let res = await fetch(`${BASE_URL}/users/${USERNAME}/events`, {
       headers,
-      next: { revalidate: 1800 }, // Cache events list for 30 minutes
+      cache: 'no-store',
     });
 
     if (res.status === 401 && headers['Authorization']) {
@@ -184,7 +184,7 @@ export async function fetchActivity(): Promise<GitHubCommitEvent[]> {
       delete publicHeaders['Authorization'];
       res = await fetch(`${BASE_URL}/users/${USERNAME}/events`, {
         headers: publicHeaders,
-        next: { revalidate: 1800 },
+        cache: 'no-store',
       });
     }
 
