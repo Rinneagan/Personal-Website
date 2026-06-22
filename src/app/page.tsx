@@ -46,14 +46,12 @@ export default function Home() {
   const handleSelectRepo = (repo: GitHubRepo | null) => {
     setSelectedRepo(repo);
     if (repo) {
-      setOpenedRepos((prev) => {
-        const next = new Set(prev);
-        next.add(repo.name);
-        if (next.size >= 3) {
-          unlockAchievement('detailed-reviewer');
-        }
-        return next;
-      });
+      const nextOpened = new Set(openedRepos);
+      nextOpened.add(repo.name);
+      setOpenedRepos(nextOpened);
+      if (nextOpened.size >= 3) {
+        unlockAchievement('detailed-reviewer');
+      }
     }
   };
 
