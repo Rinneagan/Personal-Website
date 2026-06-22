@@ -220,7 +220,7 @@ export function Projects({ repos, selectedRepo, onSelectRepo }: ProjectsProps) {
                         preserveAspectRatio="none"
                       >
                         <path
-                          d="M 50,0 C 85,0 100,15 100,50 C 100,85 85,100 50,100 C 15,100 0,85 0,50 C 0,15 15,0 50,0 Z"
+                          d="M 50,0 C 92,0 100,8 100,50 C 100,92 92,100 50,100 C 8,100 0,92 0,50 C 0,8 8,0 50,0 Z"
                           fill="var(--surface)"
                           stroke={isCenter ? 'var(--blue)' : 'var(--border)'}
                           strokeWidth={isCenter ? '2.5' : '1.5'}
