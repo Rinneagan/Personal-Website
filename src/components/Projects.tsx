@@ -199,7 +199,7 @@ export function Projects({ repos, selectedRepo, onSelectRepo }: ProjectsProps) {
                       style={{
                         height: '100%',
                         position: 'relative',
-                        padding: '1.5rem',
+                        padding: '1.85rem 1.75rem',
                         textAlign: 'left',
                         background: 'transparent',
                       }}
@@ -242,7 +242,7 @@ export function Projects({ repos, selectedRepo, onSelectRepo }: ProjectsProps) {
                       >
                         <div>
                           {/* Card Title */}
-                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.6rem' }}>
                             <span style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-1)' }}>
                               {repo.name}
                             </span>
@@ -257,10 +257,10 @@ export function Projects({ repos, selectedRepo, onSelectRepo }: ProjectsProps) {
                             style={{
                               fontSize: '0.82rem',
                               color: 'var(--text-2)',
-                              lineHeight: '1.55',
+                              lineHeight: '1.5',
                               display: '-webkit-box',
-                              WebkitLineClamp: 5,
-                              lineClamp: 5,
+                              WebkitLineClamp: 3,
+                              lineClamp: 3,
                               WebkitBoxOrient: 'vertical',
                               overflow: 'hidden',
                             }}
