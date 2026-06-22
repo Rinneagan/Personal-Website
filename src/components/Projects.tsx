@@ -68,7 +68,7 @@ export function Projects({ repos, selectedRepo, onSelectRepo }: ProjectsProps) {
           </clipPath>
         </defs>
       </svg>
-      <section id="projects" className="section" style={{ borderTop: '1px solid var(--border)' }}>
+      <section id="projects" className="section" style={{ borderTop: '1px solid var(--border)', paddingBottom: '2.5rem' }}>
       <div className="container">
         
         {/* Section Header */}
@@ -225,6 +225,8 @@ export function Projects({ repos, selectedRepo, onSelectRepo }: ProjectsProps) {
                       transformStyle: 'preserve-3d',
                       backfaceVisibility: 'hidden',
                       WebkitBackfaceVisibility: 'hidden',
+                      borderRadius: '44px',
+                      WebkitTapHighlightColor: 'transparent',
                     }}
                     animate={{
                       x: cardX,
