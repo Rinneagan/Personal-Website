@@ -1,50 +1,31 @@
-import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono, Oswald } from "next/font/google";
-import "./globals.css";
-import { SEO } from "@/components/SEO";
-import { Providers } from "./providers";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
-
-const bbhHegarty = Oswald({
-  variable: "--font-bbh-hegarty",
-  subsets: ["latin"],
-  weight: ["700"],
-});
+import type { Metadata } from 'next';
+import './globals.css';
 
 export const metadata: Metadata = {
-  title: "Portfolio - Rinneagan",
-  description: "Full-stack developer portfolio showcasing projects and skills",
+  title: 'Rinneagan — Developer',
+  description: 'Full-stack developer building thoughtful software.',
+  keywords: ['developer', 'portfolio', 'full-stack', 'react', 'next.js', 'typescript'],
+  authors: [{ name: 'Rinneagan' }],
+  openGraph: {
+    title: 'Rinneagan — Developer',
+    description: 'Full-stack developer building thoughtful software.',
+    type: 'website',
+  },
 };
 
-export const viewport: Viewport = {
-  width: "device-width",
-  initialScale: 1,
-  themeColor: "#000000",
-};
-
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} ${bbhHegarty.variable} antialiased`}
-      >
-        <Providers>
-          {children}
-        </Providers>
-      </body>
+    <html lang="en">
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+          rel="stylesheet"
+        />
+      </head>
+      <body>{children}</body>
     </html>
   );
 }
+
