@@ -37,20 +37,27 @@ export async function POST(req: Request) {
       timestamp: new Date().toISOString(),
     });
 
-    // 6. SMTP Transport Execution
-    const host = process.env.SMTP_HOST;
+    // 6. SMTP/Gmail Transport Execution
+    const user = process.env.SMTP_USER || process.env.GMAIL_USER;
+    const pass = process.env.SMTP_PASS || process.env.GMAIL_PASS;
+    const host = process.env.SMTP_HOST || (process.env.GMAIL_USER ? 'smtp.gmail.com' : undefined);
     const port = Number(process.env.SMTP_PORT) || 587;
-    const user = process.env.SMTP_USER;
-    const pass = process.env.SMTP_PASS;
     const to = process.env.CONTACT_EMAIL || 'ebnezer.dev@gmail.com';
 
-    if (host && user && pass) {
-      const transporter = nodemailer.createTransport({
-        host,
-        port,
-        secure: port === 465,
+    if (user && pass && (host || user.endsWith('@gmail.com'))) {
+      const mailConfig: any = {
         auth: { user, pass },
-      });
+      };
+
+      if (user.endsWith('@gmail.com') && !process.env.SMTP_HOST) {
+        mailConfig.service = 'gmail';
+      } else {
+        mailConfig.host = host;
+        mailConfig.port = port;
+        mailConfig.secure = port === 465;
+      }
+
+      const transporter = nodemailer.createTransport(mailConfig);
 
       await transporter.sendMail({
         from: `"${cleanName}" <${user}>`,
@@ -64,9 +71,12 @@ export async function POST(req: Request) {
                <p>${cleanMessage.replace(/\n/g, '<br>')}</p>`,
       });
       
-      console.log('Email sent successfully through SMTP.');
+      console.log('Email sent successfully.');
     } else {
-      console.log('SMTP not fully configured. Defaulting to safe logging.');
+      console.warn('Mail transporter not fully configured. Defaulting to safe logging.');
+      if (process.env.NODE_ENV === 'production') {
+        return NextResponse.json({ error: 'Mail delivery is not configured on this server.' }, { status: 503 });
+      }
     }
 
     return NextResponse.json({ ok: true });
