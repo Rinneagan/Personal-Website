@@ -176,7 +176,7 @@ export async function fetchActivity(): Promise<GitHubCommitEvent[]> {
     const headers = getHeaders();
     let res = await fetch(`${BASE_URL}/users/${USERNAME}/events`, {
       headers,
-      cache: 'no-store',
+      next: { revalidate: 300 },
     });
 
     if (res.status === 401 && headers['Authorization']) {
@@ -184,7 +184,7 @@ export async function fetchActivity(): Promise<GitHubCommitEvent[]> {
       delete publicHeaders['Authorization'];
       res = await fetch(`${BASE_URL}/users/${USERNAME}/events`, {
         headers: publicHeaders,
-        cache: 'no-store',
+        next: { revalidate: 300 },
       });
     }
 
@@ -196,15 +196,26 @@ export async function fetchActivity(): Promise<GitHubCommitEvent[]> {
     pushEvents.forEach((event: any) => {
       const repoName = event.repo.name.split('/').pop() || event.repo.name;
       const eventCommits = event.payload.commits || [];
-      eventCommits.forEach((commit: any) => {
+      if (eventCommits.length > 0) {
+        eventCommits.forEach((commit: any) => {
+          commits.push({
+            id: `${event.id}-${commit.sha}`,
+            repoName,
+            message: commit.message,
+            sha: commit.sha.substring(0, 7),
+            timestamp: event.created_at,
+          });
+        });
+      } else if (event.payload.head) {
+        const refName = event.payload.ref ? event.payload.ref.replace('refs/heads/', '') : 'main';
         commits.push({
-          id: `${event.id}-${commit.sha}`,
+          id: `${event.id}-${event.payload.head}`,
           repoName,
-          message: commit.message,
-          sha: commit.sha.substring(0, 7),
+          message: `Pushed updates to ${refName} branch`,
+          sha: event.payload.head.substring(0, 7),
           timestamp: event.created_at,
         });
-      });
+      }
     });
 
     return commits.slice(0, 10);
