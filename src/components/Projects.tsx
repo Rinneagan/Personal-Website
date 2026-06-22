@@ -52,7 +52,15 @@ export function Projects({ repos, selectedRepo, onSelectRepo }: ProjectsProps) {
   };
 
   return (
-    <section id="projects" className="section" style={{ borderTop: '1px solid var(--border)' }}>
+    <>
+      <svg style={{ position: 'absolute', width: 0, height: 0, overflow: 'hidden' }} aria-hidden="true">
+        <defs>
+          <clipPath id="squircle-clip" clipPathUnits="objectBoundingBox">
+            <path d="M 0.5,0 C 0.92,0 1,0.08 1,0.5 C 1,0.92 0.92,1 0.5,1 C 0.08,1 0,0.92 0,0.5 C 0,0.08 0.08,0 0.5,0 Z" />
+          </clipPath>
+        </defs>
+      </svg>
+      <section id="projects" className="section" style={{ borderTop: '1px solid var(--border)' }}>
       <div className="container">
         
         {/* Section Header */}
@@ -124,8 +132,10 @@ export function Projects({ repos, selectedRepo, onSelectRepo }: ProjectsProps) {
               
               {/* Floating controls - Prev Trigger */}
               {filtered.length > 1 && (
-                <button
+                <motion.button
                   onClick={handlePrev}
+                  whileHover={{ scale: 1.15, borderColor: 'var(--text-1)' }}
+                  whileTap={{ scale: 0.92 }}
                   style={{
                     position: 'absolute',
                     left: '5%',
@@ -141,16 +151,14 @@ export function Projects({ repos, selectedRepo, onSelectRepo }: ProjectsProps) {
                     justifyContent: 'center',
                     cursor: 'pointer',
                     color: 'var(--text-1)',
-                    transition: 'all 0.15s',
+                    outline: 'none',
                   }}
-                  onMouseEnter={(e) => e.currentTarget.style.borderColor = 'var(--text-1)'}
-                  onMouseLeave={(e) => e.currentTarget.style.borderColor = 'var(--border)'}
                   aria-label="Previous Project"
                 >
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                     <polyline points="15 18 9 12 15 6" />
                   </svg>
-                </button>
+                </motion.button>
               )}
 
               {/* Central project card items list */}
@@ -167,6 +175,7 @@ export function Projects({ repos, selectedRepo, onSelectRepo }: ProjectsProps) {
                 const isLeft = offset === -1;
                 const isRight = offset === 1;
                 const isVisible = isCenter || isLeft || isRight;
+                const langColor = repo.language ? (LANG_COLORS[repo.language] ?? '#2563eb') : '#2563eb';
 
                 return (
                   <motion.div
@@ -176,17 +185,24 @@ export function Projects({ repos, selectedRepo, onSelectRepo }: ProjectsProps) {
                       width: '85%',
                       maxWidth: '380px',
                       height: '300px',
-                      cursor: isCenter ? 'pointer' : 'pointer',
+                      cursor: 'pointer',
                       pointerEvents: isVisible ? 'auto' : 'none',
                     }}
                     animate={{
                       x: isCenter ? '0%' : isLeft ? '-48%' : isRight ? '48%' : offset < 0 ? '-120%' : '120%',
+                      y: 0,
                       scale: isCenter ? 1.0 : 0.82,
                       rotateY: isCenter ? 0 : isLeft ? 24 : -24,
                       opacity: isVisible ? (isCenter ? 1.0 : 0.4) : 0,
                       zIndex: isCenter ? 10 : 5,
                     }}
-                    transition={{ type: 'spring', stiffness: 260, damping: 26 }}
+                    whileHover={isCenter ? { scale: 1.03, y: -5 } : isVisible ? { scale: 0.86 } : {}}
+                    transition={{
+                      type: 'spring',
+                      stiffness: 150,
+                      damping: 15,
+                      mass: 0.8
+                    }}
                     onClick={() => {
                       if (isCenter) {
                         onSelectRepo(repo);
@@ -213,8 +229,10 @@ export function Projects({ repos, selectedRepo, onSelectRepo }: ProjectsProps) {
                           height: '100%',
                           zIndex: 0,
                           overflow: 'visible',
-                          filter: isCenter ? 'drop-shadow(0 12px 24px rgba(0,0,0,0.1))' : 'drop-shadow(0 4px 8px rgba(0,0,0,0.03))',
-                          transition: 'filter 0.2s',
+                          filter: isCenter
+                            ? `drop-shadow(0 12px 28px ${langColor}26) drop-shadow(0 4px 10px ${langColor}14)`
+                            : 'drop-shadow(0 4px 8px rgba(0,0,0,0.03))',
+                          transition: 'filter 0.3s ease',
                         }}
                         viewBox="0 0 100 100"
                         preserveAspectRatio="none"
@@ -222,12 +240,31 @@ export function Projects({ repos, selectedRepo, onSelectRepo }: ProjectsProps) {
                         <path
                           d="M 50,0 C 92,0 100,8 100,50 C 100,92 92,100 50,100 C 8,100 0,92 0,50 C 0,8 8,0 50,0 Z"
                           fill="var(--surface)"
-                          stroke={isCenter ? 'var(--blue)' : 'var(--border)'}
+                          stroke={isCenter ? langColor : 'var(--border)'}
                           strokeWidth={isCenter ? '2.5' : '1.5'}
                           vectorEffect="non-scaling-stroke"
-                          style={{ transition: 'stroke 0.2s, stroke-width 0.2s' }}
+                          style={{ transition: 'stroke 0.3s, stroke-width 0.3s' }}
                         />
                       </svg>
+
+                      {/* Glass Reflection Sweep */}
+                      {isCenter && (
+                        <motion.div
+                          key={`shine-${repo.id}`}
+                          initial={{ x: '-100%' }}
+                          animate={{ x: '180%' }}
+                          transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1], delay: 0.1 }}
+                          style={{
+                            position: 'absolute',
+                            inset: 0,
+                            background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.04) 30%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0.04) 70%, transparent)',
+                            zIndex: 2,
+                            transform: 'skewX(-25deg)',
+                            pointerEvents: 'none',
+                            clipPath: 'url(#squircle-clip)',
+                          }}
+                        />
+                      )}
 
                       {/* Card Content Wrapper */}
                       <div
@@ -240,7 +277,13 @@ export function Projects({ repos, selectedRepo, onSelectRepo }: ProjectsProps) {
                           justifyContent: 'space-between',
                         }}
                       >
-                        <div>
+                        <motion.div
+                          animate={{
+                            y: isCenter ? 0 : 6,
+                            opacity: isCenter ? 1 : 0.6,
+                          }}
+                          transition={{ type: 'spring', stiffness: 150, damping: 18 }}
+                        >
                           {/* Card Title */}
                           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.6rem' }}>
                             <span style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-1)' }}>
@@ -267,10 +310,15 @@ export function Projects({ repos, selectedRepo, onSelectRepo }: ProjectsProps) {
                           >
                             {repo.description || 'No description provided.'}
                           </div>
-                        </div>
+                        </motion.div>
 
                         {/* Card Footer */}
-                        <div
+                        <motion.div
+                          animate={{
+                            y: isCenter ? 0 : -4,
+                            opacity: isCenter ? 1 : 0.6,
+                          }}
+                          transition={{ type: 'spring', stiffness: 150, damping: 18 }}
                           style={{
                             display: 'flex',
                             alignItems: 'center',
@@ -300,7 +348,7 @@ export function Projects({ repos, selectedRepo, onSelectRepo }: ProjectsProps) {
                             </svg>
                             {repo.stargazers_count}
                           </div>
-                        </div>
+                        </motion.div>
                       </div>
                     </div>
                   </motion.div>
@@ -309,8 +357,10 @@ export function Projects({ repos, selectedRepo, onSelectRepo }: ProjectsProps) {
 
               {/* Floating controls - Next Trigger */}
               {filtered.length > 1 && (
-                <button
+                <motion.button
                   onClick={handleNext}
+                  whileHover={{ scale: 1.15, borderColor: 'var(--text-1)' }}
+                  whileTap={{ scale: 0.92 }}
                   style={{
                     position: 'absolute',
                     right: '5%',
@@ -326,16 +376,14 @@ export function Projects({ repos, selectedRepo, onSelectRepo }: ProjectsProps) {
                     justifyContent: 'center',
                     cursor: 'pointer',
                     color: 'var(--text-1)',
-                    transition: 'all 0.15s',
+                    outline: 'none',
                   }}
-                  onMouseEnter={(e) => e.currentTarget.style.borderColor = 'var(--text-1)'}
-                  onMouseLeave={(e) => e.currentTarget.style.borderColor = 'var(--border)'}
                   aria-label="Next Project"
                 >
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                     <polyline points="9 18 15 12 9 6" />
                   </svg>
-                </button>
+                </motion.button>
               )}
             </div>
 
@@ -369,5 +417,6 @@ export function Projects({ repos, selectedRepo, onSelectRepo }: ProjectsProps) {
         )}
       </div>
     </section>
+    </>
   );
 }
