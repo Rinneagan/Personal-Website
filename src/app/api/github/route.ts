@@ -26,7 +26,13 @@ export async function GET() {
     }
 
     const languageStats = computeLanguageStats(repos);
-    return NextResponse.json({ user, repos, languageStats, activity, isFallback: false });
+    return NextResponse.json({ 
+      user, 
+      repos, 
+      languageStats, 
+      activity: activity && activity.length > 0 ? activity : MOCK_COMMITS, 
+      isFallback: false 
+    });
   } catch (err) {
     console.error('GitHub API error:', err);
     const languageStats = computeLanguageStats(MOCK_REPOS);

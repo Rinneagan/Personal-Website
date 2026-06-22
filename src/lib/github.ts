@@ -194,7 +194,7 @@ export async function fetchActivity(): Promise<GitHubCommitEvent[]> {
 
     const commits: GitHubCommitEvent[] = [];
     pushEvents.forEach((event: any) => {
-      const repoName = event.repo.name.replace(`${USERNAME}/`, '');
+      const repoName = event.repo.name.split('/').pop() || event.repo.name;
       const eventCommits = event.payload.commits || [];
       eventCommits.forEach((commit: any) => {
         commits.push({

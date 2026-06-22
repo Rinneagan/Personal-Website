@@ -123,8 +123,22 @@ export function Projects({ repos, selectedRepo, onSelectRepo }: ProjectsProps) {
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.5rem', position: 'relative', width: '100%' }}>
             
             {/* Carousel Interactive Viewport */}
-            <div
+            <motion.div
               ref={containerRef}
+              drag="x"
+              dragConstraints={{ left: 0, right: 0 }}
+              dragElastic={0.6}
+              onDragEnd={(event, info) => {
+                const swipeThreshold = 50;
+                const offset = info.offset.x;
+                const velocity = info.velocity.x;
+
+                if (offset < -swipeThreshold || velocity < -400) {
+                  handleNext();
+                } else if (offset > swipeThreshold || velocity > 400) {
+                  handlePrev();
+                }
+              }}
               style={{
                 position: 'relative',
                 display: 'flex',
@@ -136,7 +150,9 @@ export function Projects({ repos, selectedRepo, onSelectRepo }: ProjectsProps) {
                 transformStyle: 'preserve-3d',
                 overflow: 'hidden',
                 paddingBlock: '10px',
+                cursor: 'grab',
               }}
+              whileTap={{ cursor: 'grabbing' }}
             >
               
               {/* Floating controls - Prev Trigger */}
@@ -413,7 +429,7 @@ export function Projects({ repos, selectedRepo, onSelectRepo }: ProjectsProps) {
                   </svg>
                 </motion.button>
               )}
-            </div>
+            </motion.div>
 
             {/* Navigation Dot Indicators */}
             {filtered.length > 1 && (
