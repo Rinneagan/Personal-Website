@@ -5,6 +5,82 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { GitHubRepo, GitHubCommitEvent } from '@/types';
 import { LanguageIcon } from './LanguageIcon';
 
+// Matrix rain fall animation
+const MatrixRain = ({ onExit }: { onExit: () => void }) => {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    canvas.width = canvas.parentElement?.clientWidth || 540;
+    canvas.height = 300;
+
+    const columns = Math.floor(canvas.width / 12);
+    const yPositions = Array(columns).fill(0);
+    const chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ$#@%&*+-/\\|";
+
+    const draw = () => {
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.08)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      ctx.fillStyle = '#50fa7b';
+      ctx.font = '10px monospace';
+
+      for (let i = 0; i < yPositions.length; i++) {
+        const char = chars[Math.floor(Math.random() * chars.length)];
+        const x = i * 12;
+        const y = yPositions[i];
+
+        ctx.fillText(char, x, y);
+
+        if (y > canvas.height && Math.random() > 0.975) {
+          yPositions[i] = 0;
+        } else {
+          yPositions[i] += 12;
+        }
+      }
+    };
+
+    const interval = setInterval(draw, 33);
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' || e.key === 'Esc') {
+        onExit();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [onExit]);
+
+  return (
+    <div style={{ position: 'relative', width: '100%', height: '300px' }}>
+      <canvas ref={canvasRef} style={{ display: 'block', background: '#000' }} />
+      <div style={{
+        position: 'absolute',
+        bottom: '8px',
+        right: '8px',
+        fontSize: '0.65rem',
+        color: '#50fa7b',
+        background: 'rgba(10, 12, 16, 0.8)',
+        padding: '2px 6px',
+        borderRadius: '3px',
+        fontFamily: 'var(--font-mono)',
+        border: '1px solid #1b4332',
+        pointerEvents: 'none'
+      }}>
+        ESC to exit Matrix mode
+      </div>
+    </div>
+  );
+};
+
 interface CommandPaletteProps {
   repos: GitHubRepo[];
   isOpen: boolean;
@@ -48,11 +124,16 @@ export function CommandPalette({
     {
       id: 'welcome',
       type: 'output',
-      text: 'Welcome to Essel-Shell v1.0.2 (Retro Terminal mode). Type "help" for a list of available CLI commands.',
+      text: 'Welcome to Essel-Shell v1.2.0 (Retro Terminal mode). Type "help" for a list of available CLI commands.',
     },
   ]);
   const terminalInputRef = useRef<HTMLInputElement>(null);
   const terminalScrollRef = useRef<HTMLDivElement>(null);
+
+  // Easter Eggs states
+  const [isMatrixMode, setIsMatrixMode] = useState(false);
+  const [isKernelPanic, setIsKernelPanic] = useState(false);
+  const [panicProgress, setPanicProgress] = useState(0);
 
   // Focus managers
   useEffect(() => {
@@ -271,6 +352,9 @@ export function CommandPalette({
               <span>  project &lt;num&gt;     - Inspect project stats modal (e.g. &quot;project 1&quot;)</span>
               <span>  commits           - Display recent dynamic git push activity log</span>
               <span>  theme &lt;name&gt;      - Switch theme (white, light, dark, terminal)</span>
+              <span>  neofetch          - Print system info layout</span>
+              <span>  matrix            - Start Matrix code digital rain simulator</span>
+              <span>  sudo rm -rf /     - Test system security overrides</span>
               <span>  contact           - Display email address & copy to clipboard</span>
               <span>  clear             - Clear screen history log</span>
               <span>  exit / close      - Close shell overlays</span>
@@ -372,6 +456,114 @@ export function CommandPalette({
         break;
       }
 
+      case 'neofetch': {
+        const resWidth = typeof window !== 'undefined' ? window.innerWidth : 1920;
+        const resHeight = typeof window !== 'undefined' ? window.innerHeight : 1080;
+        const uptimeMins = Math.floor(performance.now() / 60000) + 12;
+        const asciiLogo = [
+          "   .-/+oossssoo+/-.   ",
+          "  `:+ssssssssssssss:` ",
+          "  -+ssssssssssssssss+-",
+          " `syyyyyyyyyyyyyyyyyys`",
+          "`yyyyyyyyyyyyyyyyyyyyyy`",
+          "`yyyyyyyyyyyyyyyyyyyyyy`",
+          "`syyyyyyyyyyyyyyyyyys`",
+          " -+ssssssssssssssss+-",
+          "  `:+ssssssssssssss:` ",
+          "   `.-/+oossssoo+/-.` "
+        ].join("\n");
+
+        newLines.push({
+          id: `out-${Date.now()}`,
+          type: 'output',
+          text: (
+            <div style={{ display: 'flex', gap: '1rem', fontFamily: 'var(--font-mono)', fontSize: '0.78rem', lineHeight: '1.3' }}>
+              <div style={{ color: '#50fa7b', whiteSpace: 'pre', flexShrink: 0 }}>
+                {asciiLogo}
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
+                <span style={{ color: '#8be9fd', fontWeight: 700 }}>guest@essel-desktop</span>
+                <span>-------------------</span>
+                <span><strong style={{color:'#ff5555'}}>OS:</strong> Essel-OS v1.2.0 (Terminal Mode)</span>
+                <span><strong style={{color:'#ff5555'}}>Host:</strong> Personal-Website v2.0 (Next.js 16)</span>
+                <span><strong style={{color:'#ff5555'}}>Kernel:</strong> V8 JS Sandbox Engine</span>
+                <span><strong style={{color:'#ff5555'}}>Uptime:</strong> {uptimeMins}m (Session active)</span>
+                <span><strong style={{color:'#ff5555'}}>Shell:</strong> Essel-Terminal CLI (zsh-like)</span>
+                <span><strong style={{color:'#ff5555'}}>Resolution:</strong> {resWidth}x{resHeight} px</span>
+                <span><strong style={{color:'#ff5555'}}>Theme:</strong> Dracula Monospace Dark</span>
+                <span><strong style={{color:'#ff5555'}}>CPU:</strong> Client Virtual Thread Executer</span>
+                <span><strong style={{color:'#ff5555'}}>Memory:</strong> Dynamic JS Heap (Sufficient)</span>
+              </div>
+            </div>
+          ),
+        });
+        break;
+      }
+
+      case 'matrix':
+        setIsMatrixMode(true);
+        break;
+
+      case 'sudo': {
+        const fullCmd = rawCmd.toLowerCase();
+        if (fullCmd.includes('rm -rf')) {
+          setIsKernelPanic(true);
+          setPanicProgress(0);
+          
+          const lines = [
+            'WARNING: Root partition deletion requested.',
+            'Initializing administrative wiping protocol...',
+            'Wiping /bin ... [OK]',
+            'Wiping /etc ... [OK]',
+            'Wiping /lib ... [OK]',
+            'Wiping /sys ... [OK]',
+            'Wiping /usr ... [OK]',
+            'Wiping local cache ... [CRITICAL PRE-CONDITION FAIL]',
+            '!!! EXCEPTION: KERNEL PANIC !!!',
+          ];
+
+          let timer = 0;
+          lines.forEach((lineText, index) => {
+            setTimeout(() => {
+              setTerminalHistory((prev) => [
+                ...prev,
+                {
+                  id: `panic-${Date.now()}-${index}`,
+                  type: lineText.startsWith('!') || lineText.includes('CRITICAL') ? 'error' : 'output',
+                  text: lineText,
+                },
+              ]);
+            }, timer);
+            timer += 250;
+          });
+
+          setTimeout(() => {
+            setPanicProgress(1);
+          }, timer + 400);
+
+          setTimeout(() => {
+            setIsKernelPanic(false);
+            setPanicProgress(0);
+            setTerminalHistory((prev) => [
+              ...prev,
+              {
+                id: `panic-recover-${Date.now()}`,
+                type: 'output',
+                text: 'System self-healed. Dynamic state restored from cache backup. Don\'t try that again!',
+              },
+            ]);
+          }, timer + 4400);
+
+        } else {
+          newLines.push({
+            id: `out-${Date.now()}`,
+            type: 'error',
+            text: 'Error: superuser action unauthorized. Try "sudo rm -rf /" to check system security.',
+          });
+        }
+        break;
+      }
+
       case 'contact':
         navigator.clipboard.writeText('ebenezer.k.b.essel@gmail.com');
         newLines.push({
@@ -458,33 +650,64 @@ export function CommandPalette({
               </div>
 
               {/* Terminal Stdout history */}
-              <div
-                ref={terminalScrollRef}
-                style={{
-                  height: '300px',
-                  overflowY: 'auto',
-                  padding: '1rem',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '0.5rem',
-                  fontSize: '0.8rem',
-                  lineHeight: '1.4',
-                }}
-              >
-                {terminalHistory.map((line) => (
-                  <div
-                    key={line.id}
-                    style={{
-                      whiteSpace: 'pre-wrap',
-                      wordBreak: 'break-word',
-                      color: line.type === 'error' ? '#ff5555' : line.type === 'input' ? '#8be9fd' : '#50fa7b',
-                      textShadow: line.type === 'output' ? '0 0 3px rgba(80, 250, 123, 0.35)' : 'none',
-                    }}
-                  >
-                    {line.text}
+              {isKernelPanic && panicProgress === 1 ? (
+                <div
+                  style={{
+                    height: '300px',
+                    background: '#7f0000',
+                    color: '#fff',
+                    padding: '1.5rem',
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: '0.78rem',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'center',
+                    gap: '0.5rem',
+                    textShadow: '0 0 4px rgba(255, 0, 0, 0.5)',
+                  }}
+                >
+                  <div style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#ff5555', borderBottom: '2px solid #ff5555', paddingBottom: '0.5rem', marginBottom: '0.5rem' }}>
+                    ☣️ KERNEL PANIC: ROOT_DIRECTORY_PURGED
                   </div>
-                ))}
-              </div>
+                  <div>A fatal security exception has occurred and standard terminal thread processing is suspended.</div>
+                  <div style={{ color: '#f1fa8c' }}>Exception: Unauthorized root execution "sudo rm -rf /".</div>
+                  <div style={{ opacity: 0.8 }}>Dump details: Code 0xDEADBEEF, Segment 0x00FF8B4</div>
+                  <div style={{ opacity: 0.8 }}>Contacting systems engineer Ebenezer Essel...</div>
+                  <div style={{ marginTop: '1rem', fontStyle: 'italic', color: '#50fa7b' }}>
+                    Rebooting environment and restoring state files...
+                  </div>
+                </div>
+              ) : isMatrixMode ? (
+                <MatrixRain onExit={() => setIsMatrixMode(false)} />
+              ) : (
+                <div
+                  ref={terminalScrollRef}
+                  style={{
+                    height: '300px',
+                    overflowY: 'auto',
+                    padding: '1rem',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '0.5rem',
+                    fontSize: '0.8rem',
+                    lineHeight: '1.4',
+                  }}
+                >
+                  {terminalHistory.map((line) => (
+                    <div
+                      key={line.id}
+                      style={{
+                        whiteSpace: 'pre-wrap',
+                        wordBreak: 'break-word',
+                        color: line.type === 'error' ? '#ff5555' : line.type === 'input' ? '#8be9fd' : '#50fa7b',
+                        textShadow: line.type === 'output' ? '0 0 3px rgba(80, 250, 123, 0.35)' : 'none',
+                      }}
+                    >
+                      {line.text}
+                    </div>
+                  ))}
+                </div>
+              )}
 
               {/* Terminal Input Prompt */}
               <div style={{ display: 'flex', alignItems: 'center', padding: '0.75rem 1rem', borderTop: '1px solid #1b4332', gap: '0.5rem', background: '#0a0c10' }}>
@@ -493,6 +716,7 @@ export function CommandPalette({
                   ref={terminalInputRef}
                   type="text"
                   value={terminalInput}
+                  disabled={isKernelPanic || isMatrixMode}
                   onChange={(e) => setTerminalInput(e.target.value)}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') {
@@ -511,7 +735,7 @@ export function CommandPalette({
                     fontFamily: 'var(--font-mono)',
                     caretColor: '#50fa7b',
                   }}
-                  placeholder="Type commands..."
+                  placeholder={isKernelPanic ? "System locked..." : isMatrixMode ? "Press ESC to exit..." : "Type commands..."}
                 />
               </div>
             </div>
