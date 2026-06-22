@@ -11,8 +11,11 @@ import { Contact } from '@/components/Contact';
 import { Footer } from '@/components/Footer';
 import { CommandPalette } from '@/components/CommandPalette';
 import { ProjectModal } from '@/components/ProjectModal';
+import { AchievementToaster } from '@/components/AchievementToaster';
+import { AchievementsDrawer } from '@/components/AchievementsDrawer';
 import { GitHubUser, GitHubRepo, GitHubCommitEvent } from '@/types';
 import { MOCK_USER, MOCK_REPOS, MOCK_COMMITS } from '@/lib/github';
+import { unlockAchievement } from '@/lib/achievements';
 
 export default function Home() {
   const [user, setUser] = useState<GitHubUser | null>(null);
@@ -23,6 +26,7 @@ export default function Home() {
   
   const [selectedRepo, setSelectedRepo] = useState<GitHubRepo | null>(null);
   const [isPaletteOpen, setIsPaletteOpen] = useState(false);
+  const [openedRepos, setOpenedRepos] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     const saved = localStorage.getItem('portfolio-theme') || 'light';
@@ -34,6 +38,23 @@ export default function Home() {
     setTheme(newTheme);
     localStorage.setItem('portfolio-theme', newTheme);
     document.documentElement.setAttribute('data-theme', newTheme);
+    if (newTheme === 'terminal') {
+      unlockAchievement('retro-hacker');
+    }
+  };
+
+  const handleSelectRepo = (repo: GitHubRepo | null) => {
+    setSelectedRepo(repo);
+    if (repo) {
+      setOpenedRepos((prev) => {
+        const next = new Set(prev);
+        next.add(repo.name);
+        if (next.size >= 3) {
+          unlockAchievement('detailed-reviewer');
+        }
+        return next;
+      });
+    }
   };
 
   useEffect(() => {
@@ -67,6 +88,7 @@ export default function Home() {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault();
         setIsPaletteOpen((prev) => !prev);
+        unlockAchievement('keyboard-warrior');
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -101,8 +123,8 @@ export default function Home() {
       <Navbar theme={theme} onChangeTheme={changeTheme} onOpenPalette={() => setIsPaletteOpen(true)} />
       <main style={{ paddingTop: '56px' }}>
         <Hero user={user} activity={activity} />
-        <Projects repos={repos} selectedRepo={selectedRepo} onSelectRepo={setSelectedRepo} />
-        <Experience repos={repos} onSelectRepo={setSelectedRepo} />
+        <Projects repos={repos} selectedRepo={selectedRepo} onSelectRepo={handleSelectRepo} />
+        <Experience repos={repos} onSelectRepo={handleSelectRepo} />
         <Skills />
         <About user={user} />
         <Contact />
@@ -114,7 +136,7 @@ export default function Home() {
         isOpen={isPaletteOpen}
         onClose={() => setIsPaletteOpen(false)}
         onChangeTheme={changeTheme}
-        onSelectRepo={setSelectedRepo}
+        onSelectRepo={handleSelectRepo}
         currentTheme={theme}
         activity={activity}
       />
@@ -123,6 +145,9 @@ export default function Home() {
         repo={selectedRepo}
         onClose={() => setSelectedRepo(null)}
       />
+
+      <AchievementToaster />
+      <AchievementsDrawer />
     </>
   );
 }

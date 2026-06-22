@@ -1163,3 +1163,30 @@ body, header, section, div, button, input, textarea, span, p, h1, h2, h3, a, sel
   border-radius: 99px;
 }
 
+/* Code View Tab Layout */
+.code-view-layout {
+  display: grid;
+  grid-template-columns: 160px 1fr;
+  gap: 1rem;
+  align-items: start;
+}
+
+.code-file-tree {
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.65rem;
+  max-height: 380px;
+  overflow-y: auto;
+}
+
+@media (max-width: 540px) {
+  .code-view-layout {
+    grid-template-columns: 1fr;
+  }
+  .code-file-tree {
+    max-height: 140px;
+  }
+}
+
+

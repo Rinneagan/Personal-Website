@@ -6,6 +6,10 @@ import { GitHubRepo } from '@/types';
 import { formatDate } from '@/lib/utils';
 import { LanguageIcon } from './LanguageIcon';
 import { getProjectDNA } from '@/lib/dna-data';
+import { unlockAchievement } from '@/lib/achievements';
+import { getProjectCodeTree } from '@/lib/project-code-data';
+import { CodeHighlighter } from './CodeHighlighter';
+import { DiagnosticConsole } from './DiagnosticConsole';
 
 interface ProjectModalProps {
   repo: GitHubRepo | null;
@@ -19,9 +23,38 @@ const LANG_COLORS: Record<string, string> = {
   Swift: '#F05138', Kotlin: '#A97BFF', Dart: '#00B4AB', Shell: '#89e051',
 };
 
+// Helper to calculate exact boundary intersection coordinates for 110x36 rounded capsules
+const getLineEndpoints = (fromNode: any, toNode: any) => {
+  const dx = toNode.x - fromNode.x;
+  const dy = toNode.y - fromNode.y;
+  const len = Math.sqrt(dx * dx + dy * dy);
+  
+  if (len === 0) return { x1: fromNode.x, y1: fromNode.y, x2: toNode.x, y2: toNode.y };
+
+  const ux = dx / len;
+  const uy = dy / len;
+
+  // Actual semi-axes of the 110x36 capsule
+  const rx = 55;
+  const ry = 18;
+
+  const rFrom = 1 / Math.sqrt(Math.pow(ux / rx, 2) + Math.pow(uy / ry, 2));
+  const rTo = 1 / Math.sqrt(Math.pow(ux / rx, 2) + Math.pow(uy / ry, 2));
+
+  // The arrow tip extends 0.6 units beyond the line end (viewBox width 10, refX 9, markerWidth 6)
+  // To make the arrow tip touch the boundary exactly, the line ends at rTo + 0.6
+  return {
+    x1: fromNode.x + ux * rFrom,
+    y1: fromNode.y + uy * rFrom,
+    x2: toNode.x - ux * (rTo + 0.6),
+    y2: toNode.y - uy * (rTo + 0.6)
+  };
+};
+
 export function ProjectModal({ repo, onClose }: ProjectModalProps) {
-  const [activeTab, setActiveTab] = useState<'overview' | 'dna'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'dna' | 'code'>('overview');
   const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
+  const [selectedFilePath, setSelectedFilePath] = useState<string | null>(null);
 
   // Simulation states
   const [isSimulating, setIsSimulating] = useState(false);
@@ -36,6 +69,7 @@ export function ProjectModal({ repo, onClose }: ProjectModalProps) {
       setIsSimulating(false);
       setSimConnIndex(-1);
       setSimNodeId(null);
+      setSelectedFilePath(null);
     }
   }, [repo]);
 
@@ -44,6 +78,7 @@ export function ProjectModal({ repo, onClose }: ProjectModalProps) {
     setIsSimulating(true);
     setSimConnIndex(-1);
     setSimNodeId(null);
+    unlockAchievement('dna-explorer');
 
     for (let i = 0; i < dna.connections.length; i++) {
       const conn = dna.connections[i];
@@ -134,6 +169,12 @@ export function ProjectModal({ repo, onClose }: ProjectModalProps) {
                 onClick={() => setActiveTab('dna')}
               >
                 Project DNA
+              </button>
+              <button
+                className={`modal-tab-btn ${activeTab === 'code' ? 'active' : ''}`}
+                onClick={() => setActiveTab('code')}
+              >
+                Code View
               </button>
             </div>
 
@@ -265,7 +306,7 @@ export function ProjectModal({ repo, onClose }: ProjectModalProps) {
                   )}
                 </div>
               </div>
-            ) : (
+            ) : activeTab === 'dna' ? (
               /* ================= PROJECT DNA TAB CONTROLS ================= */
               (() => {
                 const dna = getProjectDNA(repo.name, repo.language);
@@ -310,37 +351,68 @@ export function ProjectModal({ repo, onClose }: ProjectModalProps) {
                       padding: '0.5rem 0.25rem'
                     }}>
                       <svg viewBox="0 0 500 240" style={{ width: '100%', height: 'auto', display: 'block' }}>
+                        <defs>
+                          <marker
+                            id="arrow"
+                            viewBox="0 0 10 10"
+                            refX="9"
+                            refY="5"
+                            markerWidth="6"
+                            markerHeight="6"
+                            orient="auto"
+                          >
+                            <path d="M 0 1.5 L 10 5 L 0 8.5 z" fill="var(--blue)" />
+                          </marker>
+                          <marker
+                            id="arrow-dim"
+                            viewBox="0 0 10 10"
+                            refX="9"
+                            refY="5"
+                            markerWidth="6"
+                            markerHeight="6"
+                            orient="auto"
+                          >
+                            <path d="M 0 1.5 L 10 5 L 0 8.5 z" fill="var(--border)" />
+                          </marker>
+                        </defs>
+
                         {/* Directed connection wires */}
                         {dna.connections.map((conn, idx) => {
                           const fromNode = dna.nodes.find((n) => n.id === conn.from);
                           const toNode = dna.nodes.find((n) => n.id === conn.to);
                           if (!fromNode || !toNode) return null;
 
-                          const midX = (fromNode.x + toNode.x) / 2;
-                          const midY = (fromNode.y + toNode.y) / 2;
                           const isWireActive = simConnIndex === idx;
+                          const showMarchingFlow = !isSimulating || isWireActive;
+
+                          // Compute boundary endpoints
+                          const { x1, y1, x2, y2 } = getLineEndpoints(fromNode, toNode);
+                          const midX = (x1 + x2) / 2;
+                          const midY = (y1 + y2) / 2;
 
                           return (
-                            <g key={`${conn.from}-${conn.to}-${idx}`}>
-                              {/* Background link track */}
+                             <g key={`${conn.from}-${conn.to}-${idx}`}>
+                              {/* Background link track with a static direction arrow */}
                               <line
-                                x1={fromNode.x}
-                                y1={fromNode.y}
-                                x2={toNode.x}
-                                y2={toNode.y}
+                                x1={x1}
+                                y1={y1}
+                                x2={x2}
+                                y2={y2}
                                 stroke="var(--border)"
                                 strokeWidth="2"
+                                markerEnd="url(#arrow-dim)"
                               />
                               {/* Marching dashed color pipe */}
                               <line
-                                x1={fromNode.x}
-                                y1={fromNode.y}
-                                x2={toNode.x}
-                                y2={toNode.y}
-                                stroke={isWireActive ? "var(--blue)" : "var(--border-dim)"}
+                                x1={x1}
+                                y1={y1}
+                                x2={x2}
+                                y2={y2}
+                                stroke="var(--blue)"
                                 strokeWidth="2"
-                                className={isWireActive ? "" : "dna-wire"}
-                                style={{ opacity: isWireActive ? 1 : 0.4 }}
+                                className={showMarchingFlow ? "dna-wire" : ""}
+                                style={{ opacity: showMarchingFlow ? 0.8 : 0 }}
+                                markerEnd="url(#arrow)"
                               />
                               {/* Text label */}
                               <text
@@ -359,12 +431,12 @@ export function ProjectModal({ repo, onClose }: ProjectModalProps) {
                               {/* Glowing simulated particle traveling along the wire */}
                               {isWireActive && (
                                 <motion.circle
-                                  cx={fromNode.x}
-                                  cy={fromNode.y}
+                                  cx={x1}
+                                  cy={y1}
                                   r="5"
                                   fill="var(--blue)"
                                   style={{ filter: 'drop-shadow(0 0 4px var(--blue))' }}
-                                  animate={{ cx: toNode.x, cy: toNode.y }}
+                                  animate={{ cx: x2, cy: y2 }}
                                   transition={{ duration: 1.1, ease: 'easeInOut' }}
                                 />
                               )}
@@ -510,6 +582,106 @@ export function ProjectModal({ repo, onClose }: ProjectModalProps) {
                           </div>
                         );
                       })()}
+                    </div>
+                  </div>
+                );
+              })()
+            ) : (
+              /* ================= PROJECT CODE VIEW TAB CONTROLS ================= */
+              (() => {
+                const codeTree = getProjectCodeTree(repo.name, repo.language || 'TypeScript');
+                const filePaths = Object.keys(codeTree);
+                const activePath = selectedFilePath || filePaths[0] || '';
+                const activeFile = codeTree[activePath];
+
+                return (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                    <p style={{ fontSize: '0.86rem', color: 'var(--text-2)', lineHeight: '1.5', margin: 0 }}>
+                      Inspect source code, trace core algorithms, and execute mock performance diagnostics on the console.
+                    </p>
+
+                    {/* Side-by-side Layout */}
+                    <div className="code-view-layout">
+                      {/* Left: File Tree Selector */}
+                      <div className="code-file-tree">
+                        <div style={{
+                          fontSize: '0.65rem',
+                          fontWeight: 700,
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.05em',
+                          color: 'var(--text-3)',
+                          marginBottom: '0.5rem',
+                          paddingLeft: '0.25rem'
+                        }}>
+                          📂 Files
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+                          {filePaths.map((path) => {
+                            const isSelected = path === activePath;
+                            return (
+                              <button
+                                key={path}
+                                onClick={() => setSelectedFilePath(path)}
+                                style={{
+                                  textAlign: 'left',
+                                  background: isSelected ? 'var(--blue-bg)' : 'transparent',
+                                  border: 'none',
+                                  borderRadius: 'var(--radius-sm)',
+                                  padding: '0.45rem 0.5rem',
+                                  fontSize: '0.74rem',
+                                  fontFamily: 'var(--font-mono)',
+                                  fontWeight: isSelected ? 700 : 500,
+                                  color: isSelected ? 'var(--blue)' : 'var(--text-2)',
+                                  cursor: 'pointer',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '0.35rem',
+                                  transition: 'all 0.15s',
+                                  borderLeft: isSelected ? '2px solid var(--blue)' : '2px solid transparent',
+                                }}
+                              >
+                                <span>{path.endsWith('.md') ? '📝' : '📄'}</span>
+                                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                  {codeTree[path].name}
+                                </span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      {/* Right: Code Viewer & Console */}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', flex: 1, minWidth: 0 }}>
+                        {activeFile ? (
+                          <>
+                            {/* Editor Container */}
+                            <div style={{
+                              border: '1px solid var(--border)',
+                              borderRadius: 'var(--radius)',
+                              overflow: 'hidden',
+                              height: '210px',
+                              background: '#181816',
+                              boxShadow: 'inset 0 2px 8px rgba(0,0,0,0.15)'
+                            }}>
+                              <CodeHighlighter code={activeFile.content} language={activeFile.language} />
+                            </div>
+
+                            {/* Telemetry Console */}
+                            <DiagnosticConsole repoName={repo.name} fileName={activeFile.name} />
+                          </>
+                        ) : (
+                          <div style={{
+                            padding: '2rem',
+                            textAlign: 'center',
+                            color: 'var(--text-3)',
+                            fontSize: '0.8rem',
+                            border: '1px dashed var(--border)',
+                            borderRadius: 'var(--radius)'
+                          }}>
+                            Select a file to inspect its source code.
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 );

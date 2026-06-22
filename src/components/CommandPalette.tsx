@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GitHubRepo, GitHubCommitEvent } from '@/types';
 import { LanguageIcon } from './LanguageIcon';
+import { unlockAchievement } from '@/lib/achievements';
 
 // Matrix rain fall animation
 const MatrixRain = ({ onExit }: { onExit: () => void }) => {
@@ -509,6 +510,7 @@ export function CommandPalette({
         if (fullCmd.includes('rm -rf')) {
           setIsKernelPanic(true);
           setPanicProgress(0);
+          unlockAchievement('secret-agent');
           
           const lines = [
             'WARNING: Root partition deletion requested.',
