@@ -332,19 +332,174 @@ export function Skills() {
   const activePathString = getPathString(activeDetail.footprint);
 
   return (
-    <section id="skills" className="section" style={{ borderTop: '1px solid var(--border)' }}>
+    <section id="skills" className="section" style={{ borderTop: '1px solid var(--border)', paddingTop: '1.25rem' }}>
       <div className="container">
-        {/* Section Header */}
-        <motion.div
-          className="section-header"
-          initial={{ opacity: 0, y: 16 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: '-60px' }}
-          transition={{ duration: 0.5 }}
+        
+        {/* Section Header with Inline Radar */}
+        <div 
+          style={{ 
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            alignItems: 'center', 
+            flexWrap: 'wrap',
+            gap: '2rem',
+            marginBottom: '3rem',
+          }}
         >
-          <div className="eyebrow">Expertise</div>
-          <h2 className="section-title">Skills & Radar</h2>
-        </motion.div>
+          <motion.div
+            initial={{ opacity: 0, x: -16 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true, margin: '-60px' }}
+            transition={{ duration: 0.5 }}
+          >
+            <div 
+              style={{ 
+                fontSize: '0.72rem', 
+                fontWeight: 800, // Dark & bold eyebrow
+                letterSpacing: '0.1em', 
+                textTransform: 'uppercase', 
+                color: 'var(--text-1)', // Dark text
+                marginBottom: '0.6rem' 
+              }}
+            >
+              Expertise
+            </div>
+            <h2 className="section-title">Skills</h2>
+          </motion.div>
+
+          {/* SVG Radar Visualizer (Inline) */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.92 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true, margin: '-60px' }}
+            transition={{ duration: 0.5 }}
+            style={{
+              width: '240px',
+              height: '240px',
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              userSelect: 'none',
+              position: 'relative',
+            }}
+          >
+            <svg
+              viewBox="0 0 320 320"
+              style={{
+                width: '100%',
+                height: '100%',
+                overflow: 'visible',
+              }}
+            >
+              {/* Reference Grid Hexagons */}
+              {referenceLevels.map((level) => {
+                const points = RADAR_AXES.map((_, i) => {
+                  const { x, y } = getCoords(i, level);
+                  return `${x},${y}`;
+                }).join(' ');
+                return (
+                  <g key={level}>
+                    <polygon
+                      points={points}
+                      fill="none"
+                      stroke="var(--border)"
+                      strokeWidth="1"
+                      strokeDasharray={level === 100 ? 'none' : '3 3'}
+                      style={{ opacity: 0.8 }}
+                    />
+                    <text
+                      x={cx + 4}
+                      y={cy - (r * level) / 100 + 3}
+                      fill="var(--text-3)"
+                      fontSize="8px"
+                      fontFamily="var(--font-mono)"
+                      style={{ pointerEvents: 'none' }}
+                    >
+                      {level}%
+                    </text>
+                  </g>
+                );
+              })}
+
+              {/* Axis Spokes & Labels */}
+              {RADAR_AXES.map((axis, i) => {
+                const outer = getCoords(i, 100);
+                const labelPos = getCoords(i, 115);
+                return (
+                  <g key={axis.key}>
+                    <line
+                      x1={cx}
+                      y1={cy}
+                      x2={outer.x}
+                      y2={outer.y}
+                      stroke="var(--border)"
+                      strokeWidth="1"
+                    />
+                    <circle
+                      cx={outer.x}
+                      cy={outer.y}
+                      r="2"
+                      fill="var(--border)"
+                    />
+                    <text
+                      x={labelPos.x}
+                      y={labelPos.y + 3}
+                      textAnchor="middle"
+                      fill="var(--text-2)"
+                      fontSize="11px"
+                      fontWeight="600"
+                      style={{
+                        fontFamily: 'var(--font-sans)',
+                      }}
+                    >
+                      {axis.label}
+                    </text>
+                  </g>
+                );
+              })}
+
+              {/* Smooth Morphing Dynamic Data Path */}
+              <motion.path
+                d={activePathString}
+                fill="rgba(37, 99, 235, 0.07)"
+                stroke="var(--blue)"
+                strokeWidth="2.5"
+                animate={{ d: activePathString }}
+                transition={{
+                  type: 'spring',
+                  stiffness: 90,
+                  damping: 14,
+                }}
+                style={{
+                  filter: 'drop-shadow(0 4px 16px rgba(37, 99, 235, 0.22))',
+                }}
+              />
+
+              {/* Active Anchor Pins */}
+              {activeDetail.footprint.map((val, i) => {
+                const { x, y } = getCoords(i, val);
+                return (
+                  <motion.circle
+                    key={`pin-${i}`}
+                    cx={x}
+                    cy={y}
+                    r="3.5"
+                    fill="var(--blue)"
+                    stroke="var(--surface)"
+                    strokeWidth="1.5"
+                    animate={{ cx: x, cy: y }}
+                    transition={{
+                      type: 'spring',
+                      stiffness: 90,
+                      damping: 14,
+                    }}
+                    style={{ filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.15))' }}
+                  />
+                );
+              })}
+            </svg>
+          </motion.div>
+        </div>
 
         {/* Dynamic Capability Dashboard Grid */}
         <motion.div
@@ -449,234 +604,89 @@ export function Skills() {
             </div>
           </div>
 
-          {/* Column 2: SVG Radar and Live Telemetry Cards */}
-          <div 
-            style={{ 
-              display: 'flex', 
-              flexDirection: 'column', 
-              alignItems: 'center', 
-              gap: '2rem',
+          {/* Column 2: Glassmorphic Live Telemetry Card (alone) */}
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
               width: '100%',
             }}
           >
-            {/* Visualizer Frame */}
             <div
               style={{
-                display: 'flex',
-                flexDirection: 'row',
-                flexWrap: 'wrap',
-                justifyContent: 'center',
-                alignItems: 'center',
-                gap: '2rem',
+                background: 'var(--surface)',
+                border: '1px solid var(--border)',
+                borderRadius: 'var(--radius-lg)',
+                padding: '1.5rem',
+                boxShadow: 'var(--shadow-md)',
                 width: '100%',
+                maxWidth: '320px',
+                minHeight: '220px',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'space-between',
+                position: 'relative',
+                overflow: 'hidden',
+                textAlign: 'left',
               }}
             >
-              {/* SVG Radar Visualizer */}
-              <div
-                style={{
-                  width: '260px',
-                  height: '260px',
-                  display: 'flex',
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  userSelect: 'none',
-                  position: 'relative',
-                }}
-              >
-                <svg
-                  viewBox="0 0 320 320"
-                  style={{
-                    width: '100%',
-                    height: '100%',
-                    overflow: 'visible',
-                  }}
-                >
-                  {/* Reference Grid Hexagons */}
-                  {referenceLevels.map((level) => {
-                    const points = RADAR_AXES.map((_, i) => {
-                      const { x, y } = getCoords(i, level);
-                      return `${x},${y}`;
-                    }).join(' ');
-                    return (
-                      <g key={level}>
-                        <polygon
-                          points={points}
-                          fill="none"
-                          stroke="var(--border)"
-                          strokeWidth="1"
-                          strokeDasharray={level === 100 ? 'none' : '3 3'}
-                          style={{ opacity: 0.8 }}
-                        />
-                        <text
-                          x={cx + 4}
-                          y={cy - (r * level) / 100 + 3}
-                          fill="var(--text-3)"
-                          fontSize="7.5px"
-                          fontFamily="var(--font-mono)"
-                          style={{ pointerEvents: 'none' }}
-                        >
-                          {level}%
-                        </text>
-                      </g>
-                    );
-                  })}
+              {/* Glowing status stripe */}
+              <div style={{
+                position: 'absolute',
+                left: 0,
+                top: 0,
+                bottom: 0,
+                width: '4px',
+                background: 'var(--blue)',
+              }} />
 
-                  {/* Axis Spokes & Labels */}
-                  {RADAR_AXES.map((axis, i) => {
-                    const outer = getCoords(i, 100);
-                    const labelPos = getCoords(i, 114);
-                    return (
-                      <g key={axis.key}>
-                        <line
-                          x1={cx}
-                          y1={cy}
-                          x2={outer.x}
-                          y2={outer.y}
-                          stroke="var(--border)"
-                          strokeWidth="1"
-                        />
-                        <circle
-                          cx={outer.x}
-                          cy={outer.y}
-                          r="2"
-                          fill="var(--border)"
-                        />
-                        <text
-                          x={labelPos.x}
-                          y={labelPos.y + 3}
-                          textAnchor="middle"
-                          fill="var(--text-3)"
-                          fontSize="9px"
-                          fontWeight="500"
-                          style={{
-                            fontFamily: 'var(--font-sans)',
-                          }}
-                        >
-                          {axis.label}
-                        </text>
-                      </g>
-                    );
-                  })}
-
-                  {/* Smooth Morphing Dynamic Data Path */}
-                  <motion.path
-                    d={activePathString}
-                    fill="rgba(37, 99, 235, 0.07)"
-                    stroke="var(--blue)"
-                    strokeWidth="2.5"
-                    animate={{ d: activePathString }}
-                    transition={{
-                      type: 'spring',
-                      stiffness: 90,
-                      damping: 14,
-                    }}
-                    style={{
-                      filter: 'drop-shadow(0 4px 16px rgba(37, 99, 235, 0.22))',
-                    }}
-                  />
-
-                  {/* Active Anchor Pins */}
-                  {activeDetail.footprint.map((val, i) => {
-                    const { x, y } = getCoords(i, val);
-                    return (
-                      <motion.circle
-                        key={`pin-${i}`}
-                        cx={x}
-                        cy={y}
-                        r="3.5"
-                        fill="var(--blue)"
-                        stroke="var(--surface)"
-                        strokeWidth="1.5"
-                        animate={{ cx: x, cy: y }}
-                        transition={{
-                          type: 'spring',
-                          stiffness: 90,
-                          damping: 14,
-                        }}
-                        style={{ filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.15))' }}
-                      />
-                    );
-                  })}
-                </svg>
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
+                  <span style={{ fontSize: '0.68rem', fontFamily: 'var(--font-mono)', color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                    Telemetry Node
+                  </span>
+                  <span style={{ fontSize: '0.68rem', fontFamily: 'var(--font-mono)', color: 'var(--blue)', fontWeight: 600 }}>
+                    {activeDetail.exp}
+                  </span>
+                </div>
+                <h3 style={{ fontSize: '1.15rem', fontWeight: 700, marginBottom: '0.4rem', color: 'var(--text-1)', letterSpacing: '-0.015em' }}>
+                  {activeDetail.name}
+                </h3>
+                <p style={{ fontSize: '0.8rem', color: 'var(--text-2)', lineHeight: '1.45', marginBottom: '1rem' }}>
+                  {activeDetail.description}
+                </p>
+                
+                {hoveredSkill && (
+                  <div style={{ marginBottom: '1.25rem' }}>
+                    <span style={{ display: 'block', fontSize: '0.68rem', fontFamily: 'var(--font-mono)', color: 'var(--text-3)', textTransform: 'uppercase', marginBottom: '0.2rem' }}>
+                      Primary Application
+                    </span>
+                    <span style={{ display: 'block', fontSize: '0.78rem', color: 'var(--text-1)', fontWeight: 500, lineHeight: 1.3 }}>
+                      {activeDetail.useCase}
+                    </span>
+                  </div>
+                )}
               </div>
 
-              {/* Glassmorphic Live Telemetry Card */}
-              <div
-                style={{
-                  background: 'var(--surface)',
-                  border: '1px solid var(--border)',
-                  borderRadius: 'var(--radius-lg)',
-                  padding: '1.5rem',
-                  boxShadow: 'var(--shadow-md)',
-                  width: '100%',
-                  maxWidth: '300px',
-                  minHeight: '220px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'space-between',
-                  position: 'relative',
-                  overflow: 'hidden',
-                  textAlign: 'left',
-                }}
-              >
-                {/* Glowing status stripe */}
-                <div style={{
-                  position: 'absolute',
-                  left: 0,
-                  top: 0,
-                  bottom: 0,
-                  width: '4px',
-                  background: 'var(--blue)',
-                }} />
-
-                <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
-                    <span style={{ fontSize: '0.68rem', fontFamily: 'var(--font-mono)', color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                      Telemetry Node
-                    </span>
-                    <span style={{ fontSize: '0.68rem', fontFamily: 'var(--font-mono)', color: 'var(--blue)', fontWeight: 600 }}>
-                      {activeDetail.exp}
-                    </span>
-                  </div>
-                  <h3 style={{ fontSize: '1.15rem', fontWeight: 700, marginBottom: '0.4rem', color: 'var(--text-1)', letterSpacing: '-0.015em' }}>
-                    {activeDetail.name}
-                  </h3>
-                  <p style={{ fontSize: '0.8rem', color: 'var(--text-2)', lineHeight: '1.45', marginBottom: '1rem' }}>
-                    {activeDetail.description}
-                  </p>
-                  
-                  {hoveredSkill && (
-                    <div style={{ marginBottom: '1.25rem' }}>
-                      <span style={{ display: 'block', fontSize: '0.68rem', fontFamily: 'var(--font-mono)', color: 'var(--text-3)', textTransform: 'uppercase', marginBottom: '0.2rem' }}>
-                        Primary Application
-                      </span>
-                      <span style={{ display: 'block', fontSize: '0.78rem', color: 'var(--text-1)', fontWeight: 500, lineHeight: 1.3 }}>
-                        {activeDetail.useCase}
-                      </span>
-                    </div>
-                  )}
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.72rem', color: 'var(--text-3)', marginBottom: '0.3rem' }}>
+                  <span>Relative Weight</span>
+                  <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--blue)', fontWeight: 650 }}>
+                    {activeDetail.prof}%
+                  </span>
                 </div>
-
-                <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.72rem', color: 'var(--text-3)', marginBottom: '0.3rem' }}>
-                    <span>Relative Weight</span>
-                    <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--blue)', fontWeight: 650 }}>
-                      {activeDetail.prof}%
-                    </span>
-                  </div>
-                  {/* Progress bar line */}
-                  <div style={{ height: '5px', background: 'var(--bg-subtle)', borderRadius: '99px', overflow: 'hidden' }}>
-                    <motion.div
-                      initial={{ width: 0 }}
-                      animate={{ width: `${activeDetail.prof}%` }}
-                      transition={{ type: 'spring', stiffness: 90, damping: 14 }}
-                      style={{ height: '100%', background: 'var(--blue)', borderRadius: '99px' }}
-                    />
-                  </div>
+                {/* Progress bar line */}
+                <div style={{ height: '5px', background: 'var(--bg-subtle)', borderRadius: '99px', overflow: 'hidden' }}>
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: `${activeDetail.prof}%` }}
+                    transition={{ type: 'spring', stiffness: 90, damping: 14 }}
+                    style={{ height: '100%', background: 'var(--blue)', borderRadius: '99px' }}
+                  />
                 </div>
               </div>
             </div>
-
           </div>
 
         </motion.div>
