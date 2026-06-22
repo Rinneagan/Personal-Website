@@ -44,7 +44,7 @@ export function VibeWidget() {
         border: '1px solid var(--border)',
         borderRadius: 'var(--radius-lg)',
         boxShadow: 'var(--shadow-sm)',
-        minWidth: '220px',
+        minWidth: '280px',
         flex: '1',
       }}
     >
