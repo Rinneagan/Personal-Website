@@ -22,6 +22,14 @@ export function Projects({ repos, selectedRepo, onSelectRepo }: ProjectsProps) {
   const [activeFilter, setActiveFilter] = useState<string | null>(null);
   const [activeIndex, setActiveIndex] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 640);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   // Group all languages from repositories for filtering
   const languages = useMemo(() => {
@@ -125,6 +133,7 @@ export function Projects({ repos, selectedRepo, onSelectRepo }: ProjectsProps) {
                 width: '100%',
                 height: '340px',
                 perspective: '1200px',
+                transformStyle: 'preserve-3d',
                 overflow: 'hidden',
                 paddingBlock: '10px',
               }}
@@ -172,9 +181,19 @@ export function Projects({ repos, selectedRepo, onSelectRepo }: ProjectsProps) {
                 }
 
                 const isCenter = offset === 0;
-                const isLeft = offset === -1;
-                const isRight = offset === 1;
-                const isVisible = isCenter || isLeft || isRight;
+                
+                // Show up to 2 items away on desktop, 1 item away on mobile
+                const maxVisible = isMobile ? 1 : 2;
+                const isVisible = Math.abs(offset) <= maxVisible;
+                
+                // 3D cylindrical coordinates calculations
+                const angleStep = isMobile ? 42 : 28;
+                const radius = isMobile ? 260 : 500;
+                const angleRad = (offset * angleStep * Math.PI) / 180;
+                
+                const cardX = Math.sin(angleRad) * radius;
+                const cardZ = Math.cos(angleRad) * radius - radius;
+                const cardRotateY = offset * angleStep;
                 const langColor = repo.language ? (LANG_COLORS[repo.language] ?? '#2563eb') : '#2563eb';
 
                 return (
@@ -187,20 +206,29 @@ export function Projects({ repos, selectedRepo, onSelectRepo }: ProjectsProps) {
                       height: '300px',
                       cursor: 'pointer',
                       pointerEvents: isVisible ? 'auto' : 'none',
+                      transformStyle: 'preserve-3d',
+                      backfaceVisibility: 'hidden',
+                      WebkitBackfaceVisibility: 'hidden',
                     }}
                     animate={{
-                      x: isCenter ? '0%' : isLeft ? '-48%' : isRight ? '48%' : offset < 0 ? '-120%' : '120%',
+                      x: cardX,
                       y: 0,
+                      z: cardZ,
+                      rotateY: cardRotateY,
                       scale: isCenter ? 1.0 : 0.82,
-                      rotateY: isCenter ? 0 : isLeft ? 24 : -24,
-                      opacity: isVisible ? (isCenter ? 1.0 : 0.4) : 0,
-                      zIndex: isCenter ? 10 : 5,
+                      opacity: isVisible ? (isCenter ? 1.0 : (isMobile ? 0.15 : 0.45)) : 0,
+                      zIndex: 10 - Math.abs(offset),
                     }}
-                    whileHover={isCenter ? { scale: 1.03, y: -5 } : isVisible ? { scale: 0.86 } : {}}
+                    whileHover={isCenter ? { 
+                      z: cardZ + 25, 
+                      scale: 1.03 
+                    } : isVisible ? { 
+                      scale: 0.85 
+                    } : {}}
                     transition={{
                       type: 'spring',
                       stiffness: 150,
-                      damping: 15,
+                      damping: 18,
                       mass: 0.8
                     }}
                     onClick={() => {
