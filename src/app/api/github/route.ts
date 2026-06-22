@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { fetchUser, fetchRepos, fetchActivity, MOCK_USER, MOCK_REPOS, MOCK_COMMITS } from '@/lib/github';
 import { GitHubRepo } from '@/types';
 
+export const dynamic = 'force-dynamic';
+
 function computeLanguageStats(repos: GitHubRepo[]): Record<string, number> {
   const stats: Record<string, number> = {};
   repos.forEach((repo) => {
