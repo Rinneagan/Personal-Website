@@ -1163,28 +1163,3 @@ body, header, section, div, button, input, textarea, span, p, h1, h2, h3, a, sel
   border-radius: 99px;
 }
 
-/* ── Projects Carousel Deck Overrides ──────────────────────────── */
-.carousel-nav-btn:hover:not(:disabled) {
-  transform: scale(1.08);
-  border-color: var(--text-2) !important;
-  background: var(--bg-subtle) !important;
-}
-
-.carousel-nav-btn:active:not(:disabled) {
-  transform: scale(0.95);
-}
-
-/* Adjust card transitions for Framer Motion scaling */
-.project-card {
-  transition: border-color 0.25s ease, background-color 0.25s ease !important;
-}
-
-.project-card:hover {
-  transform: none !important;
-  box-shadow: none !important;
-}
-
-.project-card.focused:hover {
-  box-shadow: var(--shadow-md) !important;
-}
-
