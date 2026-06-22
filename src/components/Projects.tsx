@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GitHubRepo } from '@/types';
 import { LanguageIcon } from './LanguageIcon';
@@ -20,262 +20,323 @@ interface ProjectsProps {
 
 export function Projects({ repos, selectedRepo, onSelectRepo }: ProjectsProps) {
   const [activeFilter, setActiveFilter] = useState<string | null>(null);
-  const [currentIndex, setCurrentIndex] = useState(0);
+  const [activeIndex, setActiveIndex] = useState(0);
+  const containerRef = useRef<HTMLDivElement>(null);
 
+  // Group all languages from repositories for filtering
   const languages = useMemo(() => {
     const langs = new Set(repos.map((r) => r.language).filter(Boolean) as string[]);
     return Array.from(langs).sort();
   }, [repos]);
 
+  // Apply search filtering
   const filtered = useMemo(() =>
     activeFilter ? repos.filter((r) => r.language === activeFilter) : repos,
     [repos, activeFilter]
   );
 
-  // Reset index to first card whenever active filters update
+  // Reset indices whenever filter changes to avoid out-of-bounds index references
   useEffect(() => {
-    setCurrentIndex(0);
+    setActiveIndex(0);
   }, [activeFilter]);
 
-  // Swiping gestural handlers
-  const handleDragEnd = (event: any, info: any) => {
-    const swipeThreshold = 40;
-    if (info.offset.x < -swipeThreshold && currentIndex < filtered.length - 1) {
-      setCurrentIndex((prev) => prev + 1);
-    } else if (info.offset.x > swipeThreshold && currentIndex > 0) {
-      setCurrentIndex((prev) => prev - 1);
-    }
+  // Infinite looping handlers
+  const handlePrev = () => {
+    if (filtered.length === 0) return;
+    setActiveIndex((prev) => (prev - 1 + filtered.length) % filtered.length);
+  };
+
+  const handleNext = () => {
+    if (filtered.length === 0) return;
+    setActiveIndex((prev) => (prev + 1) % filtered.length);
   };
 
   return (
-    <>
-      <section id="projects" className="section" style={{ borderTop: '1px solid var(--border)' }}>
-        <div className="container">
+    <section id="projects" className="section" style={{ borderTop: '1px solid var(--border)' }}>
+      <div className="container">
+        
+        {/* Section Header */}
+        <motion.div
+          className="section-header"
+          initial={{ opacity: 0, y: 16 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: '-60px' }}
+          transition={{ duration: 0.5 }}
+        >
+          <div className="eyebrow">Work</div>
+          <h2 className="section-title">Projects</h2>
+        </motion.div>
+
+        {/* Filter Pills */}
+        {languages.length > 0 && (
           <motion.div
-            className="section-header"
-            initial={{ opacity: 0, y: 16 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: '-60px' }}
-            transition={{ duration: 0.5 }}
+            className="filter-row"
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.4, delay: 0.1 }}
+            style={{ marginBottom: '2.5rem' }}
           >
-            <div className="eyebrow">Work</div>
-            <h2 className="section-title">Projects</h2>
-          </motion.div>
-
-          {/* Language filters row */}
-          {languages.length > 0 && (
-            <motion.div
-              className="filter-row"
-              initial={{ opacity: 0 }}
-              whileInView={{ opacity: 1 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.4, delay: 0.1 }}
+            <button
+              className={`filter-pill ${activeFilter === null ? 'active' : ''}`}
+              onClick={() => setActiveFilter(null)}
             >
+              All
+            </button>
+            {languages.map((lang) => (
               <button
-                className={`filter-pill ${activeFilter === null ? 'active' : ''}`}
-                onClick={() => setActiveFilter(null)}
+                key={lang}
+                className={`filter-pill ${activeFilter === lang ? 'active' : ''}`}
+                onClick={() => setActiveFilter(lang)}
               >
-                All
+                {lang}
               </button>
-              {languages.map((lang) => (
-                <button
-                  key={lang}
-                  className={`filter-pill ${activeFilter === lang ? 'active' : ''}`}
-                  onClick={() => setActiveFilter(lang)}
-                >
-                  {lang}
-                </button>
-              ))}
-              <span className="projects-count">
-                {filtered.length} {filtered.length === 1 ? 'project' : 'projects'}
-              </span>
-            </motion.div>
-          )}
+            ))}
+            <span className="projects-count">
+              {filtered.length} {filtered.length === 1 ? 'project' : 'projects'}
+            </span>
+          </motion.div>
+        )}
 
-          {/* Carousel Slider Panel */}
-          {filtered.length === 0 ? (
-            <div className="empty-state">
-              No repositories found.
-            </div>
-          ) : (
-            <div style={{ position: 'relative', width: '100%', overflow: 'visible', marginBlock: '2.5rem 1.5rem' }}>
-              
-              {/* Slidable Window */}
-              <div style={{ position: 'relative', width: '100%', overflow: 'hidden', paddingBlock: '1.5rem', borderRadius: 'var(--radius-lg)' }}>
-                <motion.div
-                  drag="x"
-                  dragConstraints={{ left: 0, right: 0 }}
-                  onDragEnd={handleDragEnd}
-                  animate={{ x: `calc(50% - 150px - ${currentIndex * 320}px)` }}
-                  transition={{ type: 'spring', stiffness: 280, damping: 28 }}
-                  style={{
-                    display: 'flex',
-                    gap: '20px',
-                    cursor: 'grab',
-                    width: 'fit-content',
-                  }}
-                  whileTap={{ cursor: 'grabbing' }}
-                >
-                  {filtered.map((repo, idx) => {
-                    const isCenter = idx === currentIndex;
-                    return (
-                      <motion.button
-                        key={repo.id}
-                        className={`project-card ${isCenter ? 'focused' : ''}`}
-                        onClick={() => {
-                          if (isCenter) {
-                            onSelectRepo(repo);
-                          } else {
-                            setCurrentIndex(idx);
-                          }
-                        }}
-                        animate={{
-                          scale: isCenter ? 1.05 : 0.92,
-                          opacity: isCenter ? 1 : 0.45,
-                        }}
-                        transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-                        style={{
-                          width: '300px',
-                          flexShrink: 0,
-                          textAlign: 'left',
-                          display: 'flex',
-                          flexDirection: 'column',
-                          boxShadow: isCenter ? 'var(--shadow-md)' : 'none',
-                          border: isCenter ? '1px solid var(--border)' : '1px solid var(--border-dim)',
-                          padding: '1.25rem',
-                          background: 'var(--surface)',
-                          borderRadius: 'var(--radius-lg)',
-                          minHeight: '200px',
-                          cursor: 'pointer',
-                        }}
-                      >
-                        <div className="project-card-header" style={{ width: '100%' }}>
-                          <span className="project-card-name" style={{ fontSize: '1rem', fontWeight: 650 }}>{repo.name}</span>
-                          <svg className="project-card-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                            <line x1="7" y1="17" x2="17" y2="7"></line>
-                            <polyline points="7 7 17 7 17 17"></polyline>
-                          </svg>
-                        </div>
-                        
-                        <div className="project-card-desc" style={{ marginTop: '0.5rem', marginBottom: '1.5rem', fontSize: '0.8rem', lineHeight: '1.5' }}>
-                          {repo.description || 'No description provided.'}
-                        </div>
-                        
-                        <div className="project-card-footer" style={{ marginTop: 'auto', width: '100%' }}>
-                          {repo.languages && repo.languages.length > 0 ? (
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
-                              {repo.languages.slice(0, 4).map((lang) => (
-                                <div key={lang} title={lang} style={{ display: 'flex', alignItems: 'center' }}>
-                                  <LanguageIcon language={lang} size={18} />
-                                </div>
-                              ))}
-                            </div>
-                          ) : repo.language ? (
-                            <div title={repo.language} style={{ display: 'flex', alignItems: 'center' }}>
-                              <LanguageIcon language={repo.language} size={18} />
-                            </div>
-                          ) : <span />}
-                          <div className="star-count">
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
-                              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-                            </svg>
-                            {repo.stargazers_count}
-                          </div>
-                        </div>
-                      </motion.button>
-                    );
-                  })}
-                </motion.div>
-              </div>
-
-              {/* Slider Chevrons / Controls */}
-              <div style={{
+        {/* Dynamic Carousel Wheel Track */}
+        {filtered.length === 0 ? (
+          <div className="empty-state" style={{ paddingBlock: '3rem' }}>
+            No repositories found.
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.5rem', position: 'relative', width: '100%' }}>
+            
+            {/* Carousel Interactive Viewport */}
+            <div
+              ref={containerRef}
+              style={{
+                position: 'relative',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                gap: '1rem',
-                marginTop: '1rem',
-              }}>
+                width: '100%',
+                height: '340px',
+                perspective: '1200px',
+                overflow: 'hidden',
+                paddingBlock: '10px',
+              }}
+            >
+              
+              {/* Floating controls - Prev Trigger */}
+              {filtered.length > 1 && (
                 <button
-                  onClick={() => currentIndex > 0 && setCurrentIndex(currentIndex - 1)}
-                  disabled={currentIndex === 0}
-                  className="carousel-nav-btn"
+                  onClick={handlePrev}
                   style={{
+                    position: 'absolute',
+                    left: '5%',
+                    zIndex: 25,
                     background: 'var(--surface)',
                     border: '1px solid var(--border)',
+                    boxShadow: 'var(--shadow-sm)',
                     borderRadius: '50%',
-                    width: '36px',
-                    height: '36px',
+                    width: '38px',
+                    height: '38px',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
+                    cursor: 'pointer',
                     color: 'var(--text-1)',
-                    opacity: currentIndex === 0 ? 0.35 : 0.85,
-                    cursor: currentIndex === 0 ? 'not-allowed' : 'pointer',
                     transition: 'all 0.15s',
                   }}
-                  title="Previous Project"
+                  onMouseEnter={(e) => e.currentTarget.style.borderColor = 'var(--text-1)'}
+                  onMouseLeave={(e) => e.currentTarget.style.borderColor = 'var(--border)'}
                   aria-label="Previous Project"
                 >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="15 18 9 12 15 6"></polyline>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <polyline points="15 18 9 12 15 6" />
                   </svg>
                 </button>
+              )}
 
-                {/* Dot Pagination indicators */}
-                <div style={{ display: 'flex', gap: '0.4rem', overflowX: 'auto', maxWidth: '180px', paddingBlock: '4px' }}>
-                  {filtered.map((_, idx) => (
+              {/* Central project card items list */}
+              {filtered.map((repo, idx) => {
+                // Calculate infinite circular distance offsets
+                let offset = idx - activeIndex;
+                if (offset < -Math.floor(filtered.length / 2)) {
+                  offset += filtered.length;
+                } else if (offset > Math.floor(filtered.length / 2)) {
+                  offset -= filtered.length;
+                }
+
+                const isCenter = offset === 0;
+                const isLeft = offset === -1;
+                const isRight = offset === 1;
+                const isVisible = isCenter || isLeft || isRight;
+
+                return (
+                  <motion.div
+                    key={repo.id}
+                    style={{
+                      position: 'absolute',
+                      width: '85%',
+                      maxWidth: '380px',
+                      height: '300px',
+                      cursor: isCenter ? 'pointer' : 'pointer',
+                      pointerEvents: isVisible ? 'auto' : 'none',
+                    }}
+                    animate={{
+                      x: isCenter ? '0%' : isLeft ? '-48%' : isRight ? '48%' : offset < 0 ? '-120%' : '120%',
+                      scale: isCenter ? 1.0 : 0.82,
+                      rotateY: isCenter ? 0 : isLeft ? 24 : -24,
+                      opacity: isVisible ? (isCenter ? 1.0 : 0.4) : 0,
+                      zIndex: isCenter ? 10 : 5,
+                    }}
+                    transition={{ type: 'spring', stiffness: 260, damping: 26 }}
+                    onClick={() => {
+                      if (isCenter) {
+                        onSelectRepo(repo);
+                      } else {
+                        setActiveIndex(idx);
+                      }
+                    }}
+                  >
+                    <div
+                      style={{
+                        height: '100%',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'space-between',
+                        padding: '1.5rem',
+                        background: 'var(--surface)',
+                        border: isCenter ? '2px solid var(--blue)' : '1px solid var(--border)',
+                        boxShadow: isCenter ? 'var(--shadow-lg)' : 'var(--shadow-sm)',
+                        borderRadius: 'var(--radius-lg)',
+                        transition: 'border 0.2s, box-shadow 0.2s',
+                        textAlign: 'left',
+                      }}
+                    >
+                      <div>
+                        {/* Card Title */}
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+                          <span style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-1)' }}>
+                            {repo.name}
+                          </span>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-3)" strokeWidth="2.5">
+                            <line x1="7" y1="17" x2="17" y2="7" />
+                            <polyline points="7 7 17 7 17 17" />
+                          </svg>
+                        </div>
+                        
+                        {/* Card Description */}
+                        <div
+                          style={{
+                            fontSize: '0.82rem',
+                            color: 'var(--text-2)',
+                            lineHeight: '1.55',
+                            display: '-webkit-box',
+                            WebkitLineClamp: 5,
+                            lineClamp: 5,
+                            WebkitBoxOrient: 'vertical',
+                            overflow: 'hidden',
+                          }}
+                        >
+                          {repo.description || 'No description provided.'}
+                        </div>
+                      </div>
+
+                      {/* Card Footer */}
+                      <div
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          paddingTop: '0.75rem',
+                          borderTop: '1px solid var(--border-dim)',
+                          marginTop: 'auto',
+                        }}
+                      >
+                        {repo.languages && repo.languages.length > 0 ? (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
+                            {repo.languages.slice(0, 4).map((lang) => (
+                              <div key={lang} title={lang} style={{ display: 'flex', alignItems: 'center' }}>
+                                <LanguageIcon language={lang} size={18} />
+                              </div>
+                            ))}
+                          </div>
+                        ) : repo.language ? (
+                          <div title={repo.language} style={{ display: 'flex', alignItems: 'center' }}>
+                            <LanguageIcon language={repo.language} size={18} />
+                          </div>
+                        ) : <span />}
+                        
+                        <div className="star-count" style={{ fontSize: '0.78rem' }}>
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                          </svg>
+                          {repo.stargazers_count}
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                );
+              })}
+
+              {/* Floating controls - Next Trigger */}
+              {filtered.length > 1 && (
+                <button
+                  onClick={handleNext}
+                  style={{
+                    position: 'absolute',
+                    right: '5%',
+                    zIndex: 25,
+                    background: 'var(--surface)',
+                    border: '1px solid var(--border)',
+                    boxShadow: 'var(--shadow-sm)',
+                    borderRadius: '50%',
+                    width: '38px',
+                    height: '38px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    color: 'var(--text-1)',
+                    transition: 'all 0.15s',
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.borderColor = 'var(--text-1)'}
+                  onMouseLeave={(e) => e.currentTarget.style.borderColor = 'var(--border)'}
+                  aria-label="Next Project"
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <polyline points="9 18 15 12 9 6" />
+                  </svg>
+                </button>
+              )}
+            </div>
+
+            {/* Navigation Dot Indicators */}
+            {filtered.length > 1 && (
+              <div style={{ display: 'flex', gap: '0.5rem', marginBlock: '0.5rem 1rem' }}>
+                {filtered.map((_, idx) => {
+                  const isActive = idx === activeIndex;
+                  return (
                     <button
                       key={idx}
-                      onClick={() => setCurrentIndex(idx)}
+                      onClick={() => setActiveIndex(idx)}
                       style={{
-                        width: idx === currentIndex ? '24px' : '6px',
-                        height: '6px',
+                        width: isActive ? '20px' : '7px',
+                        height: '7px',
                         borderRadius: '99px',
+                        background: isActive ? 'var(--blue)' : 'var(--border)',
                         border: 'none',
-                        background: idx === currentIndex ? 'var(--blue)' : 'var(--text-3)',
-                        opacity: idx === currentIndex ? 1 : 0.4,
-                        cursor: 'pointer',
-                        transition: 'all 0.2s',
                         padding: 0,
+                        cursor: 'pointer',
+                        transition: 'all 0.22s cubic-bezier(0.16, 1, 0.3, 1)',
                       }}
                       title={`Go to project ${idx + 1}`}
                       aria-label={`Go to project ${idx + 1}`}
                     />
-                  ))}
-                </div>
-
-                <button
-                  onClick={() => currentIndex < filtered.length - 1 && setCurrentIndex(currentIndex + 1)}
-                  disabled={currentIndex === filtered.length - 1}
-                  className="carousel-nav-btn"
-                  style={{
-                    background: 'var(--surface)',
-                    border: '1px solid var(--border)',
-                    borderRadius: '50%',
-                    width: '36px',
-                    height: '36px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: 'var(--text-1)',
-                    opacity: currentIndex === filtered.length - 1 ? 0.35 : 0.85,
-                    cursor: currentIndex === filtered.length - 1 ? 'not-allowed' : 'pointer',
-                    transition: 'all 0.15s',
-                  }}
-                  title="Next Project"
-                  aria-label="Next Project"
-                >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="9 18 15 12 9 6"></polyline>
-                  </svg>
-                </button>
+                  );
+                })}
               </div>
-
-            </div>
-          )}
-        </div>
-      </section>
-    </>
+            )}
+          </div>
+        )}
+      </div>
+    </section>
   );
 }
